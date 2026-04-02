@@ -1,0 +1,2131 @@
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:unified_esc_pos_printer/unified_esc_pos_printer.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/services.dart';
+import 'database_helper.dart';
+import 'image_helper.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Impresora de Facturas',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
+      home: const HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final PrinterManager _printerManager = PrinterManager();
+  PrinterDevice? _connectedPrinter;
+  String _printerStatus = 'Sin conectar';
+  final List<Map<String, dynamic>> _facturas = [];
+  Map<String, dynamic>? _negocio;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFacturas();
+    _loadNegocio();
+  }
+
+  Future<void> _loadFacturas() async {
+    final facturas = await DatabaseHelper.instance.getFacturas();
+    setState(() {
+      _facturas.addAll(facturas);
+    });
+  }
+
+  Future<void> _loadNegocio() async {
+    final negocio = await DatabaseHelper.instance.getNegocio();
+    setState(() {
+      _negocio = negocio;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _addFactura(Map<String, dynamic> factura) async {
+    final id = await DatabaseHelper.instance.insertFactura(factura);
+    setState(() {
+      _facturas.insert(0, {...factura, 'id': id});
+    });
+  }
+
+  Future<void> _updateFactura(int index, Map<String, dynamic> factura) async {
+    final existingId = _facturas[index]['id'] as int;
+    await DatabaseHelper.instance.updateFactura(existingId, factura);
+    setState(() {
+      _facturas[index] = {...factura, 'id': existingId};
+    });
+  }
+
+  void _updatePrinterStatus(String status, PrinterDevice? device) {
+    setState(() {
+      _printerStatus = status;
+      _connectedPrinter = device;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Impresora de Facturas'),
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      drawer: Drawer(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+              decoration: BoxDecoration(color: Colors.blue.shade700),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.receipt_long, size: 48, color: Colors.white),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Sistema de Facturación',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        _connectedPrinter != null
+                            ? Icons.bluetooth_connected
+                            : Icons.bluetooth_disabled,
+                        size: 16,
+                        color: _connectedPrinter != null
+                            ? Colors.greenAccent
+                            : Colors.white70,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _connectedPrinter?.name ?? 'Sin conectar',
+                          style: TextStyle(
+                            color: _connectedPrinter != null
+                                ? Colors.greenAccent
+                                : Colors.white70,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_circle_outline),
+              title: const Text('Crear Factura'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateInvoiceScreen(
+                      printerManager: _printerManager,
+                      connectedPrinter: _connectedPrinter,
+                      onFacturaCreada: (factura) {
+                        _addFactura(factura);
+                      },
+                      getSiguienteConsecutivo: () async {
+                        return await DatabaseHelper.instance
+                            .getSiguienteConsecutivo();
+                      },
+                      negocio: _negocio,
+                    ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_note),
+              title: const Text('Editar Plantilla'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditInvoiceScreen(
+                      printerManager: _printerManager,
+                      connectedPrinter: _connectedPrinter,
+                    ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.receipt_long),
+              title: const Text('Facturas'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FacturasScreen(
+                      printerManager: _printerManager,
+                      connectedPrinter: _connectedPrinter,
+                      facturas: _facturas,
+                      onFacturaActualizada: (index, factura) {
+                        _updateFactura(index, factura);
+                      },
+                      negocio: _negocio,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.bluetooth),
+              title: const Text('Conexión Bluetooth'),
+              subtitle: Text(_printerStatus),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BluetoothScreen(
+                      printerManager: _printerManager,
+                      onStatusChange: _updatePrinterStatus,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const Spacer(),
+            const Divider(),
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('v1.0.0', style: TextStyle(color: Colors.grey)),
+            ),
+          ],
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.blue.shade700, Colors.blue.shade50],
+            stops: const [0.0, 0.3],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                _buildOptionCard(
+                  icon: Icons.add_circle_outline,
+                  title: 'Crear Factura',
+                  subtitle: 'Generar nueva factura',
+                  color: Colors.green,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CreateInvoiceScreen(
+                        printerManager: _printerManager,
+                        connectedPrinter: _connectedPrinter,
+                        onFacturaCreada: (factura) {
+                          _addFactura(factura);
+                        },
+                        getSiguienteConsecutivo: () async {
+                          return await DatabaseHelper.instance
+                              .getSiguienteConsecutivo();
+                        },
+                        negocio: _negocio,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildOptionCard(
+                  icon: Icons.edit_note,
+                  title: 'Editar Plantilla',
+                  subtitle: 'Modificar plantilla',
+                  color: Colors.orange,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditInvoiceScreen(
+                        printerManager: _printerManager,
+                        connectedPrinter: _connectedPrinter,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildOptionCard(
+                  icon: Icons.receipt_long,
+                  title: 'Facturas',
+                  subtitle: 'Ver facturas creadas',
+                  color: Colors.purple,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FacturasScreen(
+                        printerManager: _printerManager,
+                        connectedPrinter: _connectedPrinter,
+                        facturas: _facturas,
+                        onFacturaActualizada: (index, factura) {
+                          _updateFactura(index, factura);
+                        },
+                        negocio: _negocio,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildOptionCard(
+                  icon: Icons.bluetooth,
+                  title: 'Conexión Bluetooth',
+                  subtitle: _connectedPrinter?.name ?? 'Sin conectar',
+                  color: Colors.blue,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BluetoothScreen(
+                        printerManager: _printerManager,
+                        onStatusChange: _updatePrinterStatus,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withAlpha(25),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 32),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BluetoothScreen extends StatefulWidget {
+  final PrinterManager printerManager;
+  final Function(String, PrinterDevice?) onStatusChange;
+  const BluetoothScreen({
+    super.key,
+    required this.printerManager,
+    required this.onStatusChange,
+  });
+  @override
+  State<BluetoothScreen> createState() => _BluetoothScreenState();
+}
+
+class _BluetoothScreenState extends State<BluetoothScreen> {
+  List<PrinterDevice> _devices = [];
+  PrinterDevice? _connectedPrinter;
+  bool _isScanning = false;
+  String _status = 'Sin conectar';
+
+  Future<bool> _requestPermissions() async {
+    final bluetoothScan = await Permission.bluetoothScan.request();
+    final bluetoothConnect = await Permission.bluetoothConnect.request();
+    return bluetoothScan.isGranted && bluetoothConnect.isGranted;
+  }
+
+  Future<bool> _isBluetoothEnabled() async {
+    try {
+      const platform = MethodChannel('com.impresora.app_impresora/bluetooth');
+      final bool result = await platform.invokeMethod('isBluetoothEnabled');
+      return result;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  Future<bool> _enableBluetooth() async {
+    try {
+      const platform = MethodChannel('com.impresora.app_impresora/bluetooth');
+      final bool result = await platform.invokeMethod('enableBluetooth');
+      return result;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  void _startScan() async {
+    setState(() {
+      _isScanning = true;
+      _devices = [];
+      _status = 'Verificando permisos...';
+    });
+    final hasPermission = await _requestPermissions();
+    if (!hasPermission) {
+      setState(() {
+        _isScanning = false;
+        _status = 'Permisos denegados';
+      });
+      return;
+    }
+    final isEnabled = await _isBluetoothEnabled();
+    if (!isEnabled) {
+      setState(() => _status = 'Encendiendo Bluetooth...');
+      await _enableBluetooth();
+      await Future.delayed(const Duration(seconds: 2));
+    }
+    setState(() => _status = 'Escaneando...');
+    try {
+      final printers = await widget.printerManager.scanPrinters(
+        timeout: const Duration(seconds: 10),
+        types: {PrinterConnectionType.bluetooth},
+      );
+      setState(() {
+        _devices = printers;
+        _isScanning = false;
+        _status = printers.isEmpty
+            ? 'No se encontraron'
+            : '${printers.length} encontradas';
+      });
+    } catch (e) {
+      setState(() {
+        _isScanning = false;
+        _status = 'Error: $e';
+      });
+    }
+  }
+
+  Future<void> _connectDevice(PrinterDevice device) async {
+    setState(() => _status = 'Conectando...');
+    try {
+      await widget.printerManager.connect(device);
+      setState(() {
+        _connectedPrinter = device;
+        _status = 'Conectado';
+      });
+      widget.onStatusChange('Conectado a ${device.name}', device);
+    } catch (e) {
+      setState(() => _status = 'Error: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Conexión Bluetooth'),
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
+      ),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            color: Colors.blue.shade700,
+            child: Column(
+              children: [
+                Icon(
+                  _connectedPrinter != null
+                      ? Icons.bluetooth_connected
+                      : Icons.bluetooth_disabled,
+                  size: 48,
+                  color: _connectedPrinter != null
+                      ? Colors.greenAccent
+                      : Colors.white70,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _connectedPrinter?.name ?? 'Sin conectar',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(_status, style: const TextStyle(color: Colors.white70)),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isScanning ? null : _startScan,
+                icon: _isScanning
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.search),
+                label: Text(
+                  _isScanning ? 'Escaneando...' : 'Buscar impresoras',
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Dispositivos:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _devices.isEmpty
+                ? const Center(child: Text('No se encontraron dispositivos'))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _devices.length,
+                    itemBuilder: (context, index) {
+                      final device = _devices[index];
+                      return Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.print),
+                          title: Text(device.name ?? 'Impresora'),
+                          subtitle: Text(
+                            device is BluetoothPrinterDevice
+                                ? (device as BluetoothPrinterDevice).address ??
+                                      ''
+                                : '',
+                          ),
+                          trailing: _connectedPrinter?.name == device.name
+                              ? const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                )
+                              : null,
+                          onTap: () => _connectDevice(device),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class CreateInvoiceScreen extends StatefulWidget {
+  final PrinterManager printerManager;
+  final PrinterDevice? connectedPrinter;
+  final Function(Map<String, dynamic>)? onFacturaCreada;
+  final Future<int> Function()? getSiguienteConsecutivo;
+  final Map<String, dynamic>? negocio;
+  const CreateInvoiceScreen({
+    super.key,
+    required this.printerManager,
+    this.connectedPrinter,
+    this.onFacturaCreada,
+    this.getSiguienteConsecutivo,
+    this.negocio,
+  });
+  @override
+  State<CreateInvoiceScreen> createState() => _CreateInvoiceScreenState();
+}
+
+class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
+  bool _isPrinting = false;
+  String _status = 'Listo';
+  final TextEditingController _clienteController = TextEditingController();
+  final TextEditingController _telefonoController = TextEditingController();
+  final TextEditingController _direccionController = TextEditingController();
+  final List<Map<String, dynamic>> _items = [];
+  final TextEditingController _itemController = TextEditingController();
+  final TextEditingController _precioController = TextEditingController();
+
+  void _agregarItem() {
+    if (_itemController.text.isNotEmpty && _precioController.text.isNotEmpty) {
+      setState(() {
+        _items.add({
+          'nombre': _itemController.text,
+          'precio': double.tryParse(_precioController.text) ?? 0.0,
+        });
+        _itemController.clear();
+        _precioController.clear();
+      });
+    }
+  }
+
+  double get _total =>
+      _items.fold(0.0, (sum, item) => sum + (item['precio'] as double));
+
+  Future<void> _imprimirFactura() async {
+    if (widget.connectedPrinter == null) {
+      setState(() => _status = 'No hay impresora conectada');
+      return;
+    }
+    setState(() {
+      _isPrinting = true;
+      _status = 'Imprimiendo...';
+    });
+    try {
+      final negocio = widget.negocio;
+      final ticket = await Ticket.create(PaperSize.mm58);
+
+      if (negocio != null && negocio['logo'] != null) {
+        try {
+          ticket.image(negocio['logo'], align: PrintAlign.center);
+          ticket.feed(1);
+        } catch (e) {
+          // Continue without logo if image fails
+        }
+      }
+
+      if (negocio != null &&
+          negocio['nombre'] != null &&
+          negocio['nombre'].isNotEmpty) {
+        ticket.text(
+          negocio['nombre'],
+          align: PrintAlign.center,
+          style: const PrintTextStyle(bold: true),
+        );
+      }
+      if (negocio != null &&
+          negocio['nit'] != null &&
+          negocio['nit'].isNotEmpty) {
+        ticket.text(negocio['nit'], align: PrintAlign.center);
+      }
+      if (negocio != null &&
+          negocio['direccion'] != null &&
+          negocio['direccion'].isNotEmpty) {
+        String direccion = negocio['direccion'];
+        if (negocio['ciudad'] != null && negocio['ciudad'].isNotEmpty) {
+          direccion += ', ${negocio['ciudad']}';
+        }
+        ticket.text(direccion, align: PrintAlign.center);
+      }
+      if (negocio != null &&
+          negocio['telefono1'] != null &&
+          negocio['telefono1'].isNotEmpty) {
+        ticket.text('Tel: ${negocio['telefono1']}', align: PrintAlign.center);
+      }
+      if (negocio != null &&
+          negocio['correo'] != null &&
+          negocio['correo'].isNotEmpty) {
+        ticket.text(negocio['correo'], align: PrintAlign.center);
+      }
+
+      ticket.feed(1);
+      ticket.text('================================', align: PrintAlign.center);
+      ticket.feed(1);
+
+      final numeroConsecutivo =
+          await widget.getSiguienteConsecutivo?.call() ?? 1;
+      final codigoUnico = 'FAC-$numeroConsecutivo';
+
+      ticket.text(
+        'FACTURA #$numeroConsecutivo',
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true),
+      );
+      ticket.text(codigoUnico, align: PrintAlign.center);
+      ticket.text(
+        'Fecha: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+        align: PrintAlign.center,
+      );
+
+      ticket.feed(1);
+      ticket.text('================================', align: PrintAlign.center);
+      ticket.feed(1);
+      ticket.text(
+        'CLIENTE',
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true),
+      );
+      ticket.text('================================', align: PrintAlign.center);
+      ticket.feed(1);
+
+      if (_clienteController.text.isNotEmpty) {
+        ticket.text(_clienteController.text, align: PrintAlign.center);
+      }
+      if (_telefonoController.text.isNotEmpty) {
+        ticket.text('Tel: ${_telefonoController.text}', align: PrintAlign.left);
+      }
+      if (_direccionController.text.isNotEmpty) {
+        ticket.text(_direccionController.text, align: PrintAlign.left);
+      }
+
+      ticket.feed(1);
+      ticket.text('================================', align: PrintAlign.center);
+      ticket.feed(1);
+
+      for (var item in _items) {
+        ticket.text('${item['nombre']}', align: PrintAlign.left);
+        ticket.text(
+          '\$${item['precio'].toStringAsFixed(2)}',
+          align: PrintAlign.right,
+        );
+      }
+
+      ticket.feed(1);
+      ticket.text('================================', align: PrintAlign.center);
+      ticket.feed(1);
+      ticket.text(
+        'TOTAL: \$${_total.toStringAsFixed(2)}',
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true, height: TextSize.size2),
+      );
+
+      ticket.feed(2);
+
+      if (negocio != null &&
+          negocio['mensaje_pie'] != null &&
+          negocio['mensaje_pie'].isNotEmpty) {
+        ticket.text(negocio['mensaje_pie'], align: PrintAlign.center);
+        ticket.feed(1);
+      }
+
+      if (negocio != null &&
+          negocio['sitio_web'] != null &&
+          negocio['sitio_web'].isNotEmpty) {
+        ticket.text(negocio['sitio_web'], align: PrintAlign.center);
+      }
+      if (negocio != null &&
+          negocio['whatsapp'] != null &&
+          negocio['whatsapp'].isNotEmpty) {
+        ticket.text(
+          'WhatsApp: ${negocio['whatsapp']}',
+          align: PrintAlign.center,
+        );
+      }
+      if (negocio != null &&
+          negocio['facebook'] != null &&
+          negocio['facebook'].isNotEmpty) {
+        ticket.text(negocio['facebook'], align: PrintAlign.center);
+      }
+      if (negocio != null &&
+          negocio['instagram'] != null &&
+          negocio['instagram'].isNotEmpty) {
+        ticket.text(negocio['instagram'], align: PrintAlign.center);
+      }
+
+      ticket.feed(3);
+      ticket.text('*** GRACIAS POR SU COMPRA ***', align: PrintAlign.center);
+      ticket.feed(5);
+      ticket.cut();
+      await widget.printerManager.printTicket(ticket);
+
+      final factura = {
+        'numero_consecutivo': numeroConsecutivo,
+        'codigo_unico': codigoUnico,
+        'cliente': _clienteController.text,
+        'telefono': _telefonoController.text,
+        'direccion': _direccionController.text,
+        'items': List.from(_items),
+        'total': _total,
+        'fecha': DateTime.now(),
+      };
+
+      widget.onFacturaCreada?.call(factura);
+
+      setState(() {
+        _status = 'Impresión completada';
+        _isPrinting = false;
+      });
+    } catch (e) {
+      setState(() {
+        _status = 'Error: $e';
+        _isPrinting = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Crear Factura'),
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Datos del Cliente',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _clienteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _telefonoController,
+                      decoration: const InputDecoration(
+                        labelText: 'Teléfono',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.phone),
+                      ),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _direccionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Dirección',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.location_on),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Agregar Items',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: _itemController,
+                            decoration: const InputDecoration(
+                              labelText: 'Producto/Servicio',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _precioController,
+                            decoration: const InputDecoration(
+                              labelText: 'Precio',
+                              border: OutlineInputBorder(),
+                              prefixText: '\$ ',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _agregarItem,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Agregar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                    if (_items.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Divider(),
+                      ..._items.asMap().entries.map(
+                        (e) => ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(e.value['nombre']),
+                          subtitle: Text(
+                            '\$${e.value['precio'].toStringAsFixed(2)}',
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () =>
+                                setState(() => _items.removeAt(e.key)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              color: Colors.blue.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'TOTAL:',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '\$${_total.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: widget.connectedPrinter != null && !_isPrinting
+                  ? _imprimirFactura
+                  : null,
+              icon: _isPrinting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.print),
+              label: Text(
+                _isPrinting
+                    ? 'Imprimiendo...'
+                    : widget.connectedPrinter == null
+                    ? 'Conecte una impresora'
+                    : 'Imprimir Factura',
+              ),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _status,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _status.contains('Error') ? Colors.red : Colors.green,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class FacturasScreen extends StatefulWidget {
+  final PrinterManager printerManager;
+  final PrinterDevice? connectedPrinter;
+  final List<Map<String, dynamic>> facturas;
+  final Function(int, Map<String, dynamic>)? onFacturaActualizada;
+  final Map<String, dynamic>? negocio;
+  const FacturasScreen({
+    super.key,
+    required this.printerManager,
+    this.connectedPrinter,
+    required this.facturas,
+    this.onFacturaActualizada,
+    this.negocio,
+  });
+  @override
+  State<FacturasScreen> createState() => _FacturasScreenState();
+}
+
+class _FacturasScreenState extends State<FacturasScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Facturas'),
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
+      ),
+      body: widget.facturas.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.receipt_long,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No hay facturas creadas',
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Crea una factura en "Crear Factura"',
+                    style: TextStyle(color: Colors.grey.shade500),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: widget.facturas.length,
+              itemBuilder: (context, index) {
+                final factura = widget.facturas[index];
+                return Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.receipt, color: Colors.blue),
+                    title: Text('Factura #${factura['numero_consecutivo']}'),
+                    subtitle: Text(
+                      '${factura['cliente']} - \$${factura['total'].toStringAsFixed(2)}',
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.orange),
+                          onPressed: () => _editarFactura(index, factura),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.print, color: Colors.green),
+                          onPressed: () => _imprimirFactura(factura),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+
+  Future<void> _imprimirFactura(Map<String, dynamic> factura) async {
+    if (widget.connectedPrinter == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay impresora conectada')),
+      );
+      return;
+    }
+    try {
+      final negocio = widget.negocio;
+      final ticket = await Ticket.create(PaperSize.mm58);
+
+      if (negocio != null && negocio['logo'] != null) {
+        try {
+          ticket.image(negocio['logo'], align: PrintAlign.center);
+          ticket.feed(1);
+        } catch (e) {
+          // Continue without logo if image fails
+        }
+      }
+
+      if (negocio != null &&
+          negocio['nombre'] != null &&
+          negocio['nombre'].isNotEmpty) {
+        ticket.text(
+          negocio['nombre'],
+          align: PrintAlign.center,
+          style: const PrintTextStyle(bold: true),
+        );
+      }
+      if (negocio != null &&
+          negocio['nit'] != null &&
+          negocio['nit'].isNotEmpty) {
+        ticket.text(negocio['nit'], align: PrintAlign.center);
+      }
+      if (negocio != null &&
+          negocio['direccion'] != null &&
+          negocio['direccion'].isNotEmpty) {
+        String direccion = negocio['direccion'];
+        if (negocio['ciudad'] != null && negocio['ciudad'].isNotEmpty) {
+          direccion += ', ${negocio['ciudad']}';
+        }
+        ticket.text(direccion, align: PrintAlign.center);
+      }
+      if (negocio != null &&
+          negocio['telefono1'] != null &&
+          negocio['telefono1'].isNotEmpty) {
+        ticket.text('Tel: ${negocio['telefono1']}', align: PrintAlign.center);
+      }
+      if (negocio != null &&
+          negocio['correo'] != null &&
+          negocio['correo'].isNotEmpty) {
+        ticket.text(negocio['correo'], align: PrintAlign.center);
+      }
+
+      ticket.feed(1);
+      ticket.text('================================', align: PrintAlign.center);
+      ticket.feed(1);
+
+      ticket.text(
+        'FACTURA #${factura['numero_consecutivo']}',
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true),
+      );
+      ticket.text(factura['codigo_unico'] ?? '', align: PrintAlign.center);
+
+      String fechaStr = '';
+      if (factura['fecha'] != null) {
+        final fecha = factura['fecha'];
+        if (fecha is DateTime) {
+          fechaStr = '${fecha.day}/${fecha.month}/${fecha.year}';
+        } else if (fecha is String) {
+          fechaStr = fecha;
+        }
+      }
+      if (fechaStr.isNotEmpty) {
+        ticket.text('Fecha: $fechaStr', align: PrintAlign.center);
+      }
+
+      ticket.feed(1);
+      ticket.text('================================', align: PrintAlign.center);
+      ticket.feed(1);
+      ticket.text(
+        'CLIENTE',
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true),
+      );
+      ticket.text('================================', align: PrintAlign.center);
+      ticket.feed(1);
+
+      if (factura['cliente'] != null && factura['cliente'].isNotEmpty) {
+        ticket.text(factura['cliente'], align: PrintAlign.center);
+      }
+      if (factura['telefono'] != null && factura['telefono'].isNotEmpty) {
+        ticket.text('Tel: ${factura['telefono']}', align: PrintAlign.left);
+      }
+      if (factura['direccion'] != null && factura['direccion'].isNotEmpty) {
+        ticket.text(factura['direccion'], align: PrintAlign.left);
+      }
+
+      ticket.feed(1);
+      ticket.text('================================', align: PrintAlign.center);
+      ticket.feed(1);
+
+      for (var item in factura['items']) {
+        ticket.text('${item['nombre']}', align: PrintAlign.left);
+        ticket.text(
+          '\$${item['precio'].toStringAsFixed(2)}',
+          align: PrintAlign.right,
+        );
+      }
+
+      ticket.feed(1);
+      ticket.text('================================', align: PrintAlign.center);
+      ticket.feed(1);
+      ticket.text(
+        'TOTAL: \$${factura['total'].toStringAsFixed(2)}',
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true, height: TextSize.size2),
+      );
+
+      ticket.feed(2);
+
+      if (negocio != null &&
+          negocio['mensaje_pie'] != null &&
+          negocio['mensaje_pie'].isNotEmpty) {
+        ticket.text(negocio['mensaje_pie'], align: PrintAlign.center);
+        ticket.feed(1);
+      }
+
+      if (negocio != null &&
+          negocio['sitio_web'] != null &&
+          negocio['sitio_web'].isNotEmpty) {
+        ticket.text(negocio['sitio_web'], align: PrintAlign.center);
+      }
+      if (negocio != null &&
+          negocio['whatsapp'] != null &&
+          negocio['whatsapp'].isNotEmpty) {
+        ticket.text(
+          'WhatsApp: ${negocio['whatsapp']}',
+          align: PrintAlign.center,
+        );
+      }
+      if (negocio != null &&
+          negocio['facebook'] != null &&
+          negocio['facebook'].isNotEmpty) {
+        ticket.text(negocio['facebook'], align: PrintAlign.center);
+      }
+      if (negocio != null &&
+          negocio['instagram'] != null &&
+          negocio['instagram'].isNotEmpty) {
+        ticket.text(negocio['instagram'], align: PrintAlign.center);
+      }
+
+      ticket.feed(3);
+      ticket.text('*** GRACIAS POR SU COMPRA ***', align: PrintAlign.center);
+      ticket.feed(5);
+      ticket.cut();
+      await widget.printerManager.printTicket(ticket);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  void _editarFactura(int index, Map<String, dynamic> factura) {
+    final clienteController = TextEditingController(text: factura['cliente']);
+    final telefonoController = TextEditingController(text: factura['telefono']);
+    final direccionController = TextEditingController(
+      text: factura['direccion'],
+    );
+    final items = List<Map<String, dynamic>>.from(factura['items']);
+    double total = factura['total'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => DraggableScrollableSheet(
+          initialChildSize: 0.9,
+          maxChildSize: 0.95,
+          minChildSize: 0.5,
+          expand: false,
+          builder: (context, scrollController) => Padding(
+            padding: const EdgeInsets.all(16),
+            child: ListView(
+              controller: scrollController,
+              children: [
+                const Text(
+                  'Editar Factura',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: clienteController,
+                  decoration: const InputDecoration(
+                    labelText: 'Cliente',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: telefonoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Teléfono',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.phone),
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: direccionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dirección',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.location_on),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Items:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                ...items.asMap().entries.map(
+                  (e) => ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(e.value['nombre']),
+                    subtitle: Text('\$${e.value['precio'].toStringAsFixed(2)}'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () {
+                        setModalState(() {
+                          total -= e.value['precio'];
+                          items.removeAt(e.key);
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '\$${total.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () {
+                    final updatedFactura = {
+                      ...factura,
+                      'cliente': clienteController.text,
+                      'telefono': telefonoController.text,
+                      'direccion': direccionController.text,
+                      'items': items,
+                      'total': total,
+                    };
+                    widget.onFacturaActualizada?.call(index, updatedFactura);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Factura actualizada')),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  child: const Text('Guardar Cambios'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class EditInvoiceScreen extends StatefulWidget {
+  final PrinterManager printerManager;
+  final PrinterDevice? connectedPrinter;
+  const EditInvoiceScreen({
+    super.key,
+    required this.printerManager,
+    this.connectedPrinter,
+  });
+  @override
+  State<EditInvoiceScreen> createState() => _EditInvoiceScreenState();
+}
+
+class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
+  final _formKey = GlobalKey<FormState>();
+  Uint8List? _logoImage;
+  final TextEditingController _nombreNegocioController = TextEditingController(
+    text: 'Mi Negocio',
+  );
+  final TextEditingController _nitController = TextEditingController(
+    text: 'NIT: 123456789',
+  );
+  final TextEditingController _direccionController = TextEditingController(
+    text: 'Calle Principal 123',
+  );
+  final TextEditingController _ciudadController = TextEditingController(
+    text: 'Ciudad',
+  );
+  final TextEditingController _codigoPostalController = TextEditingController(
+    text: '01000',
+  );
+  final TextEditingController _correoController = TextEditingController(
+    text: 'correo@negocio.com',
+  );
+  final TextEditingController _telefono1Controller = TextEditingController(
+    text: '12345678',
+  );
+  final TextEditingController _telefono2Controller = TextEditingController(
+    text: '87654321',
+  );
+  late String _numeroConsecutivo;
+  late String _codigoUnico;
+  late DateTime _fechaActual;
+  bool _isLoadingConsecutivo = true;
+  final TextEditingController _fechaEntregaController = TextEditingController();
+  final TextEditingController _mensajePieController = TextEditingController(
+    text: 'Gracias por su compra. Vuelva pronto!',
+  );
+  final TextEditingController _sitioWebController = TextEditingController(
+    text: 'www.minegocio.com',
+  );
+  final TextEditingController _facebookController = TextEditingController(
+    text: '@miFacebook',
+  );
+  final TextEditingController _instagramController = TextEditingController(
+    text: '@miInstagram',
+  );
+  final TextEditingController _whatsappController = TextEditingController(
+    text: '+504 12345678',
+  );
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _fechaActual = DateTime.now();
+    _fechaEntregaController.text =
+        '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
+    _loadNegocio();
+    _loadConsecutivo();
+  }
+
+  Future<void> _loadConsecutivo() async {
+    final siguiente = await DatabaseHelper.instance.getSiguienteConsecutivo();
+    if (mounted) {
+      setState(() {
+        _numeroConsecutivo = siguiente.toString();
+        _codigoUnico = 'FAC-$siguiente';
+        _isLoadingConsecutivo = false;
+      });
+    }
+  }
+
+  Future<void> _loadNegocio() async {
+    final negocio = await DatabaseHelper.instance.getNegocio();
+    if (negocio != null && mounted) {
+      setState(() {
+        if (negocio['logo'] != null) _logoImage = negocio['logo'];
+        _nombreNegocioController.text = negocio['nombre'] ?? '';
+        _nitController.text = negocio['nit'] ?? '';
+        _direccionController.text = negocio['direccion'] ?? '';
+        _ciudadController.text = negocio['ciudad'] ?? '';
+        _codigoPostalController.text = negocio['codigo_postal'] ?? '';
+        _correoController.text = negocio['correo'] ?? '';
+        _telefono1Controller.text = negocio['telefono1'] ?? '';
+        _telefono2Controller.text = negocio['telefono2'] ?? '';
+        _sitioWebController.text = negocio['sitio_web'] ?? '';
+        _facebookController.text = negocio['facebook'] ?? '';
+        _instagramController.text = negocio['instagram'] ?? '';
+        _whatsappController.text = negocio['whatsapp'] ?? '';
+        _mensajePieController.text = negocio['mensaje_pie'] ?? '';
+      });
+    }
+  }
+
+  Future<void> _guardar() async {
+    if (_formKey.currentState!.validate()) {
+      await DatabaseHelper.instance.saveNegocio({
+        'logo': _logoImage,
+        'nombre': _nombreNegocioController.text,
+        'nit': _nitController.text,
+        'direccion': _direccionController.text,
+        'ciudad': _ciudadController.text,
+        'codigo_postal': _codigoPostalController.text,
+        'correo': _correoController.text,
+        'telefono1': _telefono1Controller.text,
+        'telefono2': _telefono2Controller.text,
+        'sitio_web': _sitioWebController.text,
+        'facebook': _facebookController.text,
+        'instagram': _instagramController.text,
+        'whatsapp': _whatsappController.text,
+        'mensaje_pie': _mensajePieController.text,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Configuración guardada')));
+      }
+    }
+  }
+
+  void _mostrarVistaPrevia() async {
+    await _loadConsecutivo(); // Refresh before showing preview
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        maxChildSize: 0.95,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const Text(
+                  'Vista Previa de Factura',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  width: 280,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (_logoImage != null)
+                        Container(
+                          width: 80,
+                          height: 80,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.memory(
+                              _logoImage!,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      Text(
+                        _nombreNegocioController.text,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _nitController.text,
+                        style: const TextStyle(fontSize: 10),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        '${_direccionController.text}, ${_ciudadController.text}',
+                        style: const TextStyle(fontSize: 10),
+                        textAlign: TextAlign.center,
+                      ),
+                      if (_telefono1Controller.text.isNotEmpty)
+                        Text(
+                          'Tel: ${_telefono1Controller.text}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (_correoController.text.isNotEmpty)
+                        Text(
+                          _correoController.text,
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      const Divider(height: 16),
+                      Text(
+                        'Factura #${_numeroConsecutivo}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(_codigoUnico, style: const TextStyle(fontSize: 10)),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Fecha: ${_fechaActual.day}/${_fechaActual.month}/${_fechaActual.year}',
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                      const Divider(height: 16),
+                      const Text(
+                        '-----------------------------',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      const Text(
+                        'CLIENTE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        '-----------------------------',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '-----------------------------',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'TOTAL:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const Text(
+                            '\$0.00',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        '-----------------------------',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      const SizedBox(height: 8),
+                      if (_mensajePieController.text.isNotEmpty)
+                        Text(
+                          _mensajePieController.text,
+                          style: const TextStyle(fontSize: 9),
+                          textAlign: TextAlign.center,
+                        ),
+                      const SizedBox(height: 8),
+                      if (_sitioWebController.text.isNotEmpty)
+                        Text(
+                          _sitioWebController.text,
+                          style: const TextStyle(fontSize: 9),
+                        ),
+                      if (_whatsappController.text.isNotEmpty)
+                        Text(
+                          'WhatsApp: ${_whatsappController.text}',
+                          style: const TextStyle(fontSize: 9),
+                        ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        '*** FIN DEL TICKET ***',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Vista previa en papel de 58mm',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _seleccionarImagen() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 300,
+        maxHeight: 300,
+        imageQuality: 70,
+      );
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        final processedBytes = await ImageHelper.procesarLogo(bytes);
+        setState(() => _logoImage = processedBytes);
+      }
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al seleccionar imagen: $e')),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Editar Plantilla'),
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.visibility),
+            onPressed: _mostrarVistaPrevia,
+            tooltip: 'Vista Previa',
+          ),
+          IconButton(icon: const Icon(Icons.save), onPressed: _guardar),
+        ],
+      ),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Logo del Negocio',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Center(
+                          child: GestureDetector(
+                            onTap: _seleccionarImagen,
+                            child: Container(
+                              width: 150,
+                              height: 150,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade400),
+                              ),
+                              child: _logoImage != null
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.memory(
+                                        _logoImage!,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.add_photo_alternate,
+                                          size: 48,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Toca para subir logo',
+                                          style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Center(
+                          child: Text(
+                            'La imagen se imprimirá centrada al inicio de la factura',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Información del Negocio',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _nombreNegocioController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nombre del Negocio',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.store),
+                          ),
+                          validator: (value) =>
+                              value!.isEmpty ? 'Requerido' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _nitController,
+                          decoration: const InputDecoration(
+                            labelText: 'NIT / Identificación',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.badge),
+                          ),
+                          validator: (value) =>
+                              value!.isEmpty ? 'Requerido' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _direccionController,
+                          decoration: const InputDecoration(
+                            labelText: 'Dirección',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.location_on),
+                          ),
+                          validator: (value) =>
+                              value!.isEmpty ? 'Requerido' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                controller: _ciudadController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Ciudad',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.location_city),
+                                ),
+                                validator: (value) =>
+                                    value!.isEmpty ? 'Requerido' : null,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _codigoPostalController,
+                                decoration: const InputDecoration(
+                                  labelText: 'C.P.',
+                                  border: OutlineInputBorder(),
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _correoController,
+                          decoration: const InputDecoration(
+                            labelText: 'Correo electrónico',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.email),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _telefono1Controller,
+                                decoration: const InputDecoration(
+                                  labelText: 'Teléfono 1',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.phone),
+                                ),
+                                keyboardType: TextInputType.phone,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _telefono2Controller,
+                                decoration: const InputDecoration(
+                                  labelText: 'Teléfono 2',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.phone_android),
+                                ),
+                                keyboardType: TextInputType.phone,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Datos de Facturación',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        if (_isLoadingConsecutivo)
+                          const Center(child: CircularProgressIndicator())
+                        else ...[
+                          TextFormField(
+                            initialValue: _numeroConsecutivo,
+                            decoration: const InputDecoration(
+                              labelText: 'Próximo Número (Ejemplo)',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.tag),
+                            ),
+                            readOnly: true,
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            initialValue: _codigoUnico,
+                            decoration: const InputDecoration(
+                              labelText: 'Código Único (Ejemplo)',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.qr_code),
+                            ),
+                            readOnly: true,
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          initialValue:
+                              '${_fechaActual.day}/${_fechaActual.month}/${_fechaActual.year}',
+                          decoration: const InputDecoration(
+                            labelText: 'Fecha de Emisión',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.calendar_today),
+                          ),
+                          readOnly: true,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _fechaEntregaController,
+                          decoration: const InputDecoration(
+                            labelText: 'Fecha de Entrega',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.event),
+                          ),
+                          readOnly: true,
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime.now().add(
+                                const Duration(days: 365),
+                              ),
+                            );
+                            if (date != null) {
+                              _fechaEntregaController.text =
+                                  '${date.day}/${date.month}/${date.year}';
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Redes Sociales',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _sitioWebController,
+                          decoration: const InputDecoration(
+                            labelText: 'Sitio Web',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.language),
+                          ),
+                          keyboardType: TextInputType.url,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _facebookController,
+                          decoration: const InputDecoration(
+                            labelText: 'Facebook',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.facebook),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _instagramController,
+                          decoration: const InputDecoration(
+                            labelText: 'Instagram',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.camera_alt),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _whatsappController,
+                          decoration: const InputDecoration(
+                            labelText: 'WhatsApp',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.chat),
+                          ),
+                          keyboardType: TextInputType.phone,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Mensaje Final',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _mensajePieController,
+                          decoration: const InputDecoration(
+                            labelText: 'Mensaje al pie de factura',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.message),
+                          ),
+                          maxLines: 3,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _guardar,
+                  icon: const Icon(Icons.save),
+                  label: const Text('Guardar Configuración'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
