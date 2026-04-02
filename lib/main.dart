@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
 import 'database_helper.dart';
 import 'image_helper.dart';
+import 'package:image/image.dart' as img;
 
 void main() {
   runApp(const MyApp());
@@ -655,12 +656,20 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       final negocio = widget.negocio;
       final ticket = await Ticket.create(PaperSize.mm58);
 
+      debugPrint('DEBUG: Logo data: ${negocio?['logo']}');
+
       if (negocio != null && negocio['logo'] != null) {
         try {
-          ticket.image(negocio['logo'], align: PrintAlign.center);
+          debugPrint('DEBUG: Trying to print logo...');
+          final logoData = negocio['logo'] as img.Image;
+          debugPrint(
+            'DEBUG: Logo dimensions: ${logoData.width}x${logoData.height}',
+          );
+          ticket.image(logoData, align: PrintAlign.center);
           ticket.feed(1);
+          debugPrint('DEBUG: Logo printed successfully');
         } catch (e) {
-          // Continue without logo if image fails
+          debugPrint('DEBUG: Logo error: $e');
         }
       }
 
@@ -1422,7 +1431,7 @@ class EditInvoiceScreen extends StatefulWidget {
 
 class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
   final _formKey = GlobalKey<FormState>();
-  Uint8List? _logoImage;
+  img.Image? _logoImageProcessed;
   final TextEditingController _nombreNegocioController = TextEditingController(
     text: 'Mi Negocio',
   );
@@ -1494,7 +1503,7 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
     final negocio = await DatabaseHelper.instance.getNegocio();
     if (negocio != null && mounted) {
       setState(() {
-        if (negocio['logo'] != null) _logoImage = negocio['logo'];
+        if (negocio['logo'] != null) _logoImageProcessed = negocio['logo'];
         _nombreNegocioController.text = negocio['nombre'] ?? '';
         _nitController.text = negocio['nit'] ?? '';
         _direccionController.text = negocio['direccion'] ?? '';
@@ -1515,7 +1524,7 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
   Future<void> _guardar() async {
     if (_formKey.currentState!.validate()) {
       await DatabaseHelper.instance.saveNegocio({
-        'logo': _logoImage,
+        'logo': _logoImageProcessed,
         'nombre': _nombreNegocioController.text,
         'nit': _nitController.text,
         'direccion': _direccionController.text,
@@ -1584,7 +1593,7 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      if (_logoImage != null)
+                      if (_logoImageProcessed != null)
                         Container(
                           width: 80,
                           height: 80,
@@ -1595,7 +1604,9 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.memory(
-                              _logoImage!,
+                              Uint8List.fromList(
+                                img.encodePng(_logoImageProcessed!),
+                              ),
                               fit: BoxFit.contain,
                             ),
                           ),
@@ -1729,8 +1740,8 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
       );
       if (image != null) {
         final bytes = await image.readAsBytes();
-        final processedBytes = await ImageHelper.procesarLogo(bytes);
-        setState(() => _logoImage = processedBytes);
+        final processedImage = await ImageHelper.procesarLogo(bytes);
+        setState(() => _logoImageProcessed = processedImage);
       }
     } catch (e) {
       if (mounted)
@@ -1790,11 +1801,13 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: Colors.grey.shade400),
                               ),
-                              child: _logoImage != null
+                              child: _logoImageProcessed != null
                                   ? ClipRRect(
                                       borderRadius: BorderRadius.circular(12),
                                       child: Image.memory(
-                                        _logoImage!,
+                                        Uint8List.fromList(
+                                          img.encodePng(_logoImageProcessed!),
+                                        ),
                                         fit: BoxFit.cover,
                                       ),
                                     )

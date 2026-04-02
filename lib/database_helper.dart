@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:image/image.dart' as img;
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -206,8 +208,14 @@ class DatabaseHelper {
     if (results.isEmpty) return null;
 
     final row = results.first;
+    img.Image? logoImage;
+    if (row['logo'] != null) {
+      final logoBytes = row['logo'] as Uint8List;
+      logoImage = img.decodeImage(logoBytes);
+    }
+
     return {
-      'logo': row['logo'],
+      'logo': logoImage,
       'nombre': row['nombre'],
       'nit': row['nit'],
       'direccion': row['direccion'],

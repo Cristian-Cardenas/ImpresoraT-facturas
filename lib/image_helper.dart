@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 
 class ImageHelper {
-  static Future<Uint8List?> procesarLogo(Uint8List imagenBytes) async {
+  static Future<img.Image?> procesarLogo(Uint8List imagenBytes) async {
     try {
       final image = img.decodeImage(imagenBytes);
       if (image == null) return null;
@@ -20,26 +20,7 @@ class ImageHelper {
         }
       }
 
-      final grayscale = img.grayscale(resized);
-      final binary = img.Image(
-        width: grayscale.width,
-        height: grayscale.height,
-      );
-
-      for (int y = 0; y < grayscale.height; y++) {
-        for (int x = 0; x < grayscale.width; x++) {
-          final pixel = grayscale.getPixel(x, y);
-          final luminance = img.getLuminance(pixel);
-          if (luminance > 127) {
-            binary.setPixel(x, y, img.ColorUint8.rgb(255, 255, 255));
-          } else {
-            binary.setPixel(x, y, img.ColorUint8.rgb(0, 0, 0));
-          }
-        }
-      }
-
-      final result = img.encodePng(binary);
-      return Uint8List.fromList(result);
+      return img.grayscale(resized);
     } catch (e) {
       return null;
     }
