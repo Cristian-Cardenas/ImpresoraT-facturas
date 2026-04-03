@@ -120,6 +120,10 @@ class DatabaseHelper {
         total REAL NOT NULL,
         fecha TEXT NOT NULL,
         estado TEXT NOT NULL DEFAULT 'Abierto',
+        atendido_por TEXT,
+        modelo TEXT,
+        serie TEXT,
+        estado_actual TEXT,
         FOREIGN KEY (cliente_id) REFERENCES clientes (id)
       )
     ''');
@@ -187,6 +191,10 @@ class DatabaseHelper {
       'total': factura['total'],
       'fecha': factura['fecha'].toString(),
       'estado': factura['estado'] ?? 'Abierto',
+      'atendido_por': factura['atendido_por'] ?? '',
+      'modelo': factura['modelo'] ?? '',
+      'serie': factura['serie'] ?? '',
+      'estado_actual': factura['estado_actual'] ?? '',
     };
     await db.insert('facturas', data);
     await incrementarContador();
@@ -212,6 +220,10 @@ class DatabaseHelper {
         'total': row['total'],
         'fecha': DateTime.parse(row['fecha'] as String),
         'estado': row['estado'] ?? 'Abierto',
+        'atendido_por': row['atendido_por'] ?? '',
+        'modelo': row['modelo'] ?? '',
+        'serie': row['serie'] ?? '',
+        'estado_actual': row['estado_actual'] ?? '',
       };
     }).toList();
   }
@@ -228,6 +240,10 @@ class DatabaseHelper {
       'items': jsonEncode(factura['items']),
       'total': factura['total'],
       'estado': factura['estado'] ?? 'Abierto',
+      'atendido_por': factura['atendido_por'] ?? '',
+      'modelo': factura['modelo'] ?? '',
+      'serie': factura['serie'] ?? '',
+      'estado_actual': factura['estado_actual'] ?? '',
     };
     return await db.update('facturas', data, where: 'id = ?', whereArgs: [id]);
   }

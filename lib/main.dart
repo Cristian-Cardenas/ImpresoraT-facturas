@@ -720,6 +720,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   final TextEditingController _infoAdicionalController =
       TextEditingController();
   final TextEditingController _direccionController = TextEditingController();
+  final TextEditingController _atendidoPorController = TextEditingController();
+  final TextEditingController _modeloController = TextEditingController();
+  final TextEditingController _serieController = TextEditingController();
+  final TextEditingController _estadoActualController = TextEditingController();
   final List<Map<String, dynamic>> _items = [];
   final TextEditingController _itemController = TextEditingController();
   final TextEditingController _precioController = TextEditingController();
@@ -1079,6 +1083,36 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         );
 
       ticket.text('================================', align: PrintAlign.center);
+      ticket.text(
+        'OTROS DATOS',
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true),
+      );
+      ticket.text('================================', align: PrintAlign.center);
+
+      if (_atendidoPorController.text.isNotEmpty) {
+        ticket.text(
+          'Atendido por: ${_atendidoPorController.text}',
+          align: PrintAlign.left,
+        );
+      }
+      if (_modeloController.text.isNotEmpty) {
+        ticket.text(
+          'Modelo: ${_modeloController.text}',
+          align: PrintAlign.left,
+        );
+      }
+      if (_serieController.text.isNotEmpty) {
+        ticket.text('Serie: ${_serieController.text}', align: PrintAlign.left);
+      }
+      if (_estadoActualController.text.isNotEmpty) {
+        ticket.text(
+          'Estado Actual: ${_estadoActualController.text}',
+          align: PrintAlign.left,
+        );
+      }
+
+      ticket.text('================================', align: PrintAlign.center);
 
       for (var item in _items) {
         ticket.text('${item['nombre']}', align: PrintAlign.left);
@@ -1144,6 +1178,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         'total': _total,
         'fecha': DateTime.now(),
         'estado': 'Abierto',
+        'atendido_por': _atendidoPorController.text,
+        'modelo': _modeloController.text,
+        'serie': _serieController.text,
+        'estado_actual': _estadoActualController.text,
       };
 
       widget.onFacturaCreada?.call(factura);
@@ -1318,6 +1356,42 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                       if (_direccionController.text.isNotEmpty)
                         Text(
                           'Direccion: ${_direccionController.text}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      const Text(
+                        'OTROS DATOS',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      if (_atendidoPorController.text.isNotEmpty)
+                        Text(
+                          'Atendido por: ${_atendidoPorController.text}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (_modeloController.text.isNotEmpty)
+                        Text(
+                          'Modelo: ${_modeloController.text}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (_serieController.text.isNotEmpty)
+                        Text(
+                          'Serie: ${_serieController.text}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (_estadoActualController.text.isNotEmpty)
+                        Text(
+                          'Estado Actual: ${_estadoActualController.text}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       const SizedBox(height: 8),
@@ -1527,6 +1601,60 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                         prefixIcon: Icon(Icons.info_outline),
                       ),
                       maxLines: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Otros Datos',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _atendidoPorController,
+                      decoration: const InputDecoration(
+                        labelText: 'Atendido por',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _modeloController,
+                      decoration: const InputDecoration(
+                        labelText: 'Modelo',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.devices),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _serieController,
+                      decoration: const InputDecoration(
+                        labelText: 'Serie',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.tag),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _estadoActualController,
+                      decoration: const InputDecoration(
+                        labelText: 'Estado Actual',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.check_circle_outline),
+                      ),
                     ),
                   ],
                 ),
@@ -2570,6 +2698,35 @@ class _FacturasScreenState extends State<FacturasScreen> {
       }
 
       ticket.text('================================', align: PrintAlign.center);
+      ticket.text(
+        'OTROS DATOS',
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true),
+      );
+      ticket.text('================================', align: PrintAlign.center);
+
+      if (factura['atendido_por'] != null &&
+          factura['atendido_por'].isNotEmpty) {
+        ticket.text(
+          'Atendido por: ${factura['atendido_por']}',
+          align: PrintAlign.left,
+        );
+      }
+      if (factura['modelo'] != null && factura['modelo'].isNotEmpty) {
+        ticket.text('Modelo: ${factura['modelo']}', align: PrintAlign.left);
+      }
+      if (factura['serie'] != null && factura['serie'].isNotEmpty) {
+        ticket.text('Serie: ${factura['serie']}', align: PrintAlign.left);
+      }
+      if (factura['estado_actual'] != null &&
+          factura['estado_actual'].isNotEmpty) {
+        ticket.text(
+          'Estado Actual: ${factura['estado_actual']}',
+          align: PrintAlign.left,
+        );
+      }
+
+      ticket.text('================================', align: PrintAlign.center);
 
       for (var item in factura['items']) {
         ticket.text('${item['nombre']}', align: PrintAlign.left);
@@ -2763,6 +2920,46 @@ class _FacturasScreenState extends State<FacturasScreen> {
                           factura['direccion'].isNotEmpty)
                         Text(
                           'Direccion: ${factura['direccion']}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      const Text(
+                        'OTROS DATOS',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      if (factura['atendido_por'] != null &&
+                          factura['atendido_por'].isNotEmpty)
+                        Text(
+                          'Atendido por: ${factura['atendido_por']}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (factura['modelo'] != null &&
+                          factura['modelo'].isNotEmpty)
+                        Text(
+                          'Modelo: ${factura['modelo']}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (factura['serie'] != null &&
+                          factura['serie'].isNotEmpty)
+                        Text(
+                          'Serie: ${factura['serie']}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (factura['estado_actual'] != null &&
+                          factura['estado_actual'].isNotEmpty)
+                        Text(
+                          'Estado Actual: ${factura['estado_actual']}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       const SizedBox(height: 8),
