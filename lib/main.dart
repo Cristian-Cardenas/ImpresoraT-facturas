@@ -2678,8 +2678,20 @@ class FacturasScreen extends StatefulWidget {
 }
 
 class _FacturasScreenState extends State<FacturasScreen> {
+  Key _listKey = UniqueKey();
+
+  void _refreshFacturas() async {
+    final facturas = await DatabaseHelper.instance.getFacturas();
+    widget.facturas.clear();
+    widget.facturas.addAll(facturas);
+    setState(() {
+      _listKey = UniqueKey();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final displayedFacturas = widget.facturas;
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -2687,7 +2699,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
       ),
-      body: widget.facturas.isEmpty
+      body: displayedFacturas.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -2711,10 +2723,11 @@ class _FacturasScreenState extends State<FacturasScreen> {
               ),
             )
           : ListView.builder(
+              key: _listKey,
               padding: const EdgeInsets.all(16),
-              itemCount: widget.facturas.length,
+              itemCount: displayedFacturas.length,
               itemBuilder: (context, index) {
-                final factura = widget.facturas[index];
+                final factura = displayedFacturas[index];
                 final estado = factura['estado'] ?? 'Abierto';
                 return Card(
                   child: ListTile(
@@ -3532,6 +3545,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
                     };
                     widget.onFacturaActualizada?.call(index, updatedFactura);
                     Navigator.pop(context);
+                    _refreshFacturas();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Factura actualizada')),
                     );
