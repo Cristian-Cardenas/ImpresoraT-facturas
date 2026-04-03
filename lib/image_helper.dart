@@ -20,7 +20,7 @@ class ImageHelper {
         }
       }
 
-      return img.grayscale(resized);
+      return resized;
     } catch (e) {
       return null;
     }

@@ -191,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         negocio: _negocio,
                       ),
                     ),
-                  );
+                  ).then((_) => _loadNegocio());
                 }
               },
             ),
@@ -208,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       connectedPrinter: _connectedPrinter,
                     ),
                   ),
-                );
+                ).then((_) => _loadNegocio());
               },
             ),
             ListTile(
@@ -333,7 +333,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             negocio: _negocio,
                           ),
                         ),
-                      );
+                      ).then((_) => _loadNegocio());
                     }
                   },
                 ),
@@ -351,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         connectedPrinter: _connectedPrinter,
                       ),
                     ),
-                  ),
+                  ).then((_) => _loadNegocio()),
                 ),
                 const SizedBox(height: 16),
                 _buildOptionCard(
@@ -992,7 +992,11 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       if (negocio != null && negocio['logo'] != null) {
         try {
           final logoData = negocio['logo'] as img.Image;
+          debugPrint(
+            'DEBUG: Logo dimensions: ${logoData.width}x${logoData.height}',
+          );
           ticket.image(logoData, align: PrintAlign.center);
+          debugPrint('DEBUG: Logo printed successfully');
         } catch (e) {
           debugPrint('Error printing logo: $e');
         }
