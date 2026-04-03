@@ -3523,7 +3523,7 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
   late DateTime _fechaActual;
   bool _isLoadingConsecutivo = true;
   final TextEditingController _mensajePieController = TextEditingController(
-    text: 'Gracias por su compra. Vuelva pronto!',
+    text: 'Aqui van los terminos y condiciones de los productos y servicios.',
   );
   final TextEditingController _sitioWebController = TextEditingController(
     text: 'www.minegocio.com',
@@ -3983,7 +3983,7 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
                               child: TextFormField(
                                 controller: _codigoPostalController,
                                 decoration: const InputDecoration(
-                                  labelText: 'C.P.',
+                                  labelText: 'Cod.Postal',
                                   border: OutlineInputBorder(),
                                 ),
                                 keyboardType: TextInputType.number,
