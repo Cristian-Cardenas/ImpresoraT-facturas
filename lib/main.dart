@@ -7,6 +7,10 @@ import 'database_helper.dart';
 import 'image_helper.dart';
 import 'package:image/image.dart' as img;
 
+String formatCOP(double value) {
+  return '\$${value.round().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+}
+
 void main() {
   runApp(const MyApp());
 }
@@ -948,7 +952,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                           ),
                           title: Text(producto['nombre'] ?? ''),
                           subtitle: Text(
-                            '\$${producto['precio'].toStringAsFixed(2)}',
+                            formatCOP(producto['precio'] as double),
                           ),
                           onTap: () {
                             setState(() {
@@ -1071,14 +1075,14 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       for (var item in _items) {
         ticket.text('${item['nombre']}', align: PrintAlign.left);
         ticket.text(
-          '\$${item['precio'].toStringAsFixed(2)}',
+          formatCOP(item['precio'] as double),
           align: PrintAlign.right,
         );
       }
 
       ticket.text('================================', align: PrintAlign.center);
       ticket.text(
-        'TOTAL: \$${_total.toStringAsFixed(2)}',
+        'TOTAL: ${formatCOP(_total)}',
         align: PrintAlign.center,
         style: const PrintTextStyle(bold: true, height: TextSize.size2),
       );
@@ -1311,7 +1315,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                               style: const TextStyle(fontSize: 10),
                             ),
                             Text(
-                              '\$${item['precio'].toStringAsFixed(2)}',
+                              formatCOP(item['precio'] as double),
                               style: const TextStyle(fontSize: 10),
                             ),
                           ],
@@ -1329,7 +1333,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            '\$${_total.toStringAsFixed(2)}',
+                            formatCOP(_total),
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -1656,7 +1660,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                           contentPadding: EdgeInsets.zero,
                           title: Text(e.value['nombre']),
                           subtitle: Text(
-                            '\$${e.value['precio'].toStringAsFixed(2)}',
+                            formatCOP(e.value['precio'] as double),
                           ),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
@@ -1686,7 +1690,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                       ),
                     ),
                     Text(
-                      '\$${_total.toStringAsFixed(2)}',
+                      formatCOP(_total),
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -2346,7 +2350,7 @@ class _ProductosScreenState extends State<ProductosScreen> {
                           ),
                           title: Text(producto['nombre'] ?? ''),
                           subtitle: Text(
-                            '\$${producto['precio'].toStringAsFixed(2)}',
+                            formatCOP(producto['precio'] as double),
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -2440,7 +2444,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
                     leading: const Icon(Icons.receipt, color: Colors.blue),
                     title: Text('Factura #${factura['numero_consecutivo']}'),
                     subtitle: Text(
-                      '${factura['cliente']} - \$${factura['total'].toStringAsFixed(2)}',
+                      '${factura['cliente']} - ${formatCOP(factura['total'] as double)}',
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -2557,14 +2561,14 @@ class _FacturasScreenState extends State<FacturasScreen> {
       for (var item in factura['items']) {
         ticket.text('${item['nombre']}', align: PrintAlign.left);
         ticket.text(
-          '\$${item['precio'].toStringAsFixed(2)}',
+          formatCOP(item['precio'] as double),
           align: PrintAlign.right,
         );
       }
 
       ticket.text('================================', align: PrintAlign.center);
       ticket.text(
-        'TOTAL: \$${factura['total'].toStringAsFixed(2)}',
+        'TOTAL: ${formatCOP(factura['total'] as double)}',
         align: PrintAlign.center,
         style: const PrintTextStyle(bold: true, height: TextSize.size2),
       );
@@ -2741,7 +2745,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
                               style: const TextStyle(fontSize: 10),
                             ),
                             Text(
-                              '\$${item['precio'].toStringAsFixed(2)}',
+                              formatCOP(item['precio'] as double),
                               style: const TextStyle(fontSize: 10),
                             ),
                           ],
@@ -2759,7 +2763,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            '\$${factura['total'].toStringAsFixed(2)}',
+                            formatCOP(factura['total'] as double),
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -2904,7 +2908,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                     title: Text(e.value['nombre']),
-                    subtitle: Text('\$${e.value['precio'].toStringAsFixed(2)}'),
+                    subtitle: Text(formatCOP(e.value['precio'] as double)),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () {
@@ -2928,7 +2932,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
                       ),
                     ),
                     Text(
-                      '\$${total.toStringAsFixed(2)}',
+                      formatCOP(total),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
