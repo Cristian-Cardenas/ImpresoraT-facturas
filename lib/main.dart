@@ -103,6 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Impresora de Facturas'),
         backgroundColor: Colors.blue.shade700,
@@ -583,6 +584,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Conexión Bluetooth'),
         backgroundColor: Colors.blue.shade700,
@@ -1611,6 +1613,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Crear Factura'),
         backgroundColor: Colors.blue.shade700,
@@ -1800,6 +1803,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                     Row(
                       children: [
                         Expanded(
+                          flex: 2,
                           child: TextField(
                             controller: _itemController,
                             decoration: const InputDecoration(
@@ -1810,38 +1814,47 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: _agregarItem,
-                          icon: const Icon(Icons.save, color: Colors.green),
-                          tooltip: 'Agregar item',
-                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: _precioController,
-                      decoration: const InputDecoration(
-                        labelText: 'Precio',
-                        border: OutlineInputBorder(),
-                        prefixText: 'L ',
-                        prefixIcon: Icon(Icons.attach_money),
-                      ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (_) => setState(() {}),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _precioController,
+                            decoration: const InputDecoration(
+                              labelText: 'Precio',
+                              border: OutlineInputBorder(),
+                              prefixText: 'L ',
+                              prefixIcon: Icon(Icons.attach_money),
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: _agregarItem,
+                          icon: const Icon(
+                            Icons.add_circle,
+                            color: Colors.green,
+                          ),
+                          tooltip: 'Agregar a factura',
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
-                    if (_itemController.text.trim().isNotEmpty &&
-                        _precioController.text.trim().isNotEmpty)
+                    if (_itemController.text.trim().isNotEmpty)
                       SizedBox(
                         width: double.infinity,
                         child: TextButton.icon(
                           onPressed: () async {
-                            if (_itemController.text.isEmpty ||
-                                _precioController.text.isEmpty) {
+                            if (_itemController.text.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Ingrese nombre y precio'),
+                                  content: Text(
+                                    'Ingrese el nombre del producto',
+                                  ),
                                 ),
                               );
                               return;
@@ -2235,8 +2248,9 @@ class _ClientesScreenState extends State<ClientesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text('Clientes'),
+        title: const Text('Conexión Bluetooth'),
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
       ),
@@ -2547,6 +2561,7 @@ class _ProductosScreenState extends State<ProductosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Productos y Servicios'),
         backgroundColor: Colors.blue.shade700,
@@ -2671,6 +2686,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Facturas'),
         backgroundColor: Colors.blue.shade700,
@@ -3808,6 +3824,7 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Editar Plantilla'),
         backgroundColor: Colors.blue.shade700,
