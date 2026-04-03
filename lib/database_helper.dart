@@ -100,8 +100,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE productos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        precio REAL NOT NULL
+        nombre TEXT NOT NULL
       )
     ''');
 
@@ -352,10 +351,7 @@ class DatabaseHelper {
 
   Future<int> insertProducto(Map<String, dynamic> producto) async {
     final db = await database;
-    return await db.insert('productos', {
-      'nombre': producto['nombre'] ?? '',
-      'precio': producto['precio'] ?? 0.0,
-    });
+    return await db.insert('productos', {'nombre': producto['nombre'] ?? ''});
   }
 
   Future<List<Map<String, dynamic>>> getProductos() async {
@@ -367,7 +363,7 @@ class DatabaseHelper {
     final db = await database;
     return await db.update(
       'productos',
-      producto,
+      {'nombre': producto['nombre'] ?? ''},
       where: 'id = ?',
       whereArgs: [id],
     );

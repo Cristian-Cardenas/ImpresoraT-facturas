@@ -951,16 +951,8 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                             child: Icon(Icons.inventory, color: Colors.white),
                           ),
                           title: Text(producto['nombre'] ?? ''),
-                          subtitle: Text(
-                            formatCOP(producto['precio'] as double),
-                          ),
                           onTap: () {
-                            setState(() {
-                              _items.add({
-                                'nombre': producto['nombre'],
-                                'precio': producto['precio'],
-                              });
-                            });
+                            _itemController.text = producto['nombre'] ?? '';
                             Navigator.pop(context);
                           },
                         );
@@ -2088,7 +2080,6 @@ class _ProductosScreenState extends State<ProductosScreen> {
 
   void _mostrarAgregarProducto() {
     final nombreController = TextEditingController();
-    final precioController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -2120,30 +2111,19 @@ class _ProductosScreenState extends State<ProductosScreen> {
                 prefixIcon: Icon(Icons.inventory),
               ),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: precioController,
-              decoration: const InputDecoration(
-                labelText: 'Precio',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.attach_money),
-                prefixText: '\$ ',
-              ),
-              keyboardType: TextInputType.number,
-            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () async {
-                if (nombreController.text.isEmpty ||
-                    precioController.text.isEmpty) {
+                if (nombreController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Complete todos los campos')),
+                    const SnackBar(
+                      content: Text('Ingrese el nombre del producto'),
+                    ),
                   );
                   return;
                 }
                 await DatabaseHelper.instance.insertProducto({
                   'nombre': nombreController.text,
-                  'precio': double.tryParse(precioController.text) ?? 0.0,
                 });
                 await _loadProductos();
                 if (mounted) {
@@ -2169,9 +2149,6 @@ class _ProductosScreenState extends State<ProductosScreen> {
 
   void _mostrarEditarProducto(Map<String, dynamic> producto) {
     final nombreController = TextEditingController(text: producto['nombre']);
-    final precioController = TextEditingController(
-      text: producto['precio'].toString(),
-    );
 
     showModalBottomSheet(
       context: context,
@@ -2203,30 +2180,19 @@ class _ProductosScreenState extends State<ProductosScreen> {
                 prefixIcon: Icon(Icons.inventory),
               ),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: precioController,
-              decoration: const InputDecoration(
-                labelText: 'Precio',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.attach_money),
-                prefixText: '\$ ',
-              ),
-              keyboardType: TextInputType.number,
-            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () async {
-                if (nombreController.text.isEmpty ||
-                    precioController.text.isEmpty) {
+                if (nombreController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Complete todos los campos')),
+                    const SnackBar(
+                      content: Text('Ingrese el nombre del producto'),
+                    ),
                   );
                   return;
                 }
                 await DatabaseHelper.instance.updateProducto(producto['id'], {
                   'nombre': nombreController.text,
-                  'precio': double.tryParse(precioController.text) ?? 0.0,
                 });
                 await _loadProductos();
                 if (mounted) {
@@ -2353,9 +2319,6 @@ class _ProductosScreenState extends State<ProductosScreen> {
                             ),
                           ),
                           title: Text(producto['nombre'] ?? ''),
-                          subtitle: Text(
-                            formatCOP(producto['precio'] as double),
-                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
