@@ -1778,74 +1778,57 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Agregar Items',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Agregar Items',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (_productos.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: _mostrarSelectorProductos,
+                            icon: const Icon(Icons.search, size: 18),
+                            label: const Text('Buscar'),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
-                          flex: 2,
                           child: TextField(
                             controller: _itemController,
                             decoration: const InputDecoration(
                               labelText: 'Producto/Servicio',
                               border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.shopping_bag),
                             ),
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _precioController,
-                            decoration: const InputDecoration(
-                              labelText: 'Precio',
-                              border: OutlineInputBorder(),
-                              prefixText: '\$ ',
-                            ),
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) => setState(() {}),
-                          ),
+                        IconButton(
+                          onPressed: _agregarItem,
+                          icon: const Icon(Icons.save, color: Colors.green),
+                          tooltip: 'Agregar item',
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: _agregarItem,
-                              icon: const Icon(Icons.add),
-                              label: const Text('Agregar'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange,
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: _mostrarSelectorProductos,
-                              icon: const Icon(Icons.search),
-                              label: const Text('Buscar'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.blue,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    TextField(
+                      controller: _precioController,
+                      decoration: const InputDecoration(
+                        labelText: 'Precio',
+                        border: OutlineInputBorder(),
+                        prefixText: 'L ',
+                        prefixIcon: Icon(Icons.attach_money),
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 8),
                     if (_itemController.text.trim().isNotEmpty &&
