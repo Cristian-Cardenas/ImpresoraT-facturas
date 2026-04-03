@@ -1051,11 +1051,32 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       ticket.text('================================', align: PrintAlign.center);
 
       if (_clienteController.text.isNotEmpty)
-        ticket.text(_clienteController.text, align: PrintAlign.center);
+        ticket.text(
+          'Nombre: ${_clienteController.text}',
+          align: PrintAlign.left,
+        );
+      if (_documentoController.text.isNotEmpty)
+        ticket.text(
+          'Documento: ${_documentoController.text}',
+          align: PrintAlign.left,
+        );
       if (_telefonoController.text.isNotEmpty)
-        ticket.text('Tel: ${_telefonoController.text}', align: PrintAlign.left);
+        ticket.text(
+          'Telefono: ${_telefonoController.text}',
+          align: PrintAlign.left,
+        );
+      if (_emailController.text.isNotEmpty)
+        ticket.text('Correo: ${_emailController.text}', align: PrintAlign.left);
+      if (_infoAdicionalController.text.isNotEmpty)
+        ticket.text(
+          'Info Adicional: ${_infoAdicionalController.text}',
+          align: PrintAlign.left,
+        );
       if (_direccionController.text.isNotEmpty)
-        ticket.text(_direccionController.text, align: PrintAlign.left);
+        ticket.text(
+          'Direccion: ${_direccionController.text}',
+          align: PrintAlign.left,
+        );
 
       ticket.text('================================', align: PrintAlign.center);
 
@@ -1271,17 +1292,32 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                       const SizedBox(height: 8),
                       if (_clienteController.text.isNotEmpty)
                         Text(
-                          _clienteController.text,
-                          textAlign: TextAlign.center,
+                          'Nombre: ${_clienteController.text}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (_documentoController.text.isNotEmpty)
+                        Text(
+                          'Documento: ${_documentoController.text}',
+                          style: const TextStyle(fontSize: 10),
                         ),
                       if (_telefonoController.text.isNotEmpty)
                         Text(
-                          'Tel: ${_telefonoController.text}',
+                          'Telefono: ${_telefonoController.text}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (_emailController.text.isNotEmpty)
+                        Text(
+                          'Correo: ${_emailController.text}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (_infoAdicionalController.text.isNotEmpty)
+                        Text(
+                          'Info Adicional: ${_infoAdicionalController.text}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       if (_direccionController.text.isNotEmpty)
                         Text(
-                          _direccionController.text,
+                          'Direccion: ${_direccionController.text}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       const SizedBox(height: 8),
@@ -2505,13 +2541,32 @@ class _FacturasScreenState extends State<FacturasScreen> {
       ticket.text('================================', align: PrintAlign.center);
 
       if (factura['cliente'] != null && factura['cliente'].isNotEmpty) {
-        ticket.text(factura['cliente'], align: PrintAlign.center);
+        ticket.text('Nombre: ${factura['cliente']}', align: PrintAlign.left);
+      }
+      if (factura['documento'] != null && factura['documento'].isNotEmpty) {
+        ticket.text(
+          'Documento: ${factura['documento']}',
+          align: PrintAlign.left,
+        );
       }
       if (factura['telefono'] != null && factura['telefono'].isNotEmpty) {
-        ticket.text('Tel: ${factura['telefono']}', align: PrintAlign.left);
+        ticket.text('Telefono: ${factura['telefono']}', align: PrintAlign.left);
+      }
+      if (factura['email'] != null && factura['email'].isNotEmpty) {
+        ticket.text('Correo: ${factura['email']}', align: PrintAlign.left);
+      }
+      if (factura['info_adicional'] != null &&
+          factura['info_adicional'].isNotEmpty) {
+        ticket.text(
+          'Info Adicional: ${factura['info_adicional']}',
+          align: PrintAlign.left,
+        );
       }
       if (factura['direccion'] != null && factura['direccion'].isNotEmpty) {
-        ticket.text(factura['direccion'], align: PrintAlign.left);
+        ticket.text(
+          'Direccion: ${factura['direccion']}',
+          align: PrintAlign.left,
+        );
       }
 
       ticket.text('================================', align: PrintAlign.center);
@@ -2676,17 +2731,38 @@ class _FacturasScreenState extends State<FacturasScreen> {
                       const SizedBox(height: 8),
                       if (factura['cliente'] != null &&
                           factura['cliente'].isNotEmpty)
-                        Text(factura['cliente'], textAlign: TextAlign.center),
+                        Text(
+                          'Nombre: ${factura['cliente']}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (factura['documento'] != null &&
+                          factura['documento'].isNotEmpty)
+                        Text(
+                          'Documento: ${factura['documento']}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
                       if (factura['telefono'] != null &&
                           factura['telefono'].isNotEmpty)
                         Text(
-                          'Tel: ${factura['telefono']}',
+                          'Telefono: ${factura['telefono']}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (factura['email'] != null &&
+                          factura['email'].isNotEmpty)
+                        Text(
+                          'Correo: ${factura['email']}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (factura['info_adicional'] != null &&
+                          factura['info_adicional'].isNotEmpty)
+                        Text(
+                          'Info Adicional: ${factura['info_adicional']}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       if (factura['direccion'] != null &&
                           factura['direccion'].isNotEmpty)
                         Text(
-                          factura['direccion'],
+                          'Direccion: ${factura['direccion']}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       const SizedBox(height: 8),
