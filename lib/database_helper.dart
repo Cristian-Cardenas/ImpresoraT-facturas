@@ -119,6 +119,7 @@ class DatabaseHelper {
         items TEXT NOT NULL,
         total REAL NOT NULL,
         fecha TEXT NOT NULL,
+        estado TEXT NOT NULL DEFAULT 'Abierto',
         FOREIGN KEY (cliente_id) REFERENCES clientes (id)
       )
     ''');
@@ -185,6 +186,7 @@ class DatabaseHelper {
       'items': jsonEncode(factura['items']),
       'total': factura['total'],
       'fecha': factura['fecha'].toString(),
+      'estado': factura['estado'] ?? 'Abierto',
     };
     await db.insert('facturas', data);
     await incrementarContador();
@@ -209,6 +211,7 @@ class DatabaseHelper {
         'items': jsonDecode(row['items'] as String),
         'total': row['total'],
         'fecha': DateTime.parse(row['fecha'] as String),
+        'estado': row['estado'] ?? 'Abierto',
       };
     }).toList();
   }
@@ -224,6 +227,7 @@ class DatabaseHelper {
       'direccion': factura['direccion'] ?? '',
       'items': jsonEncode(factura['items']),
       'total': factura['total'],
+      'estado': factura['estado'] ?? 'Abierto',
     };
     return await db.update('facturas', data, where: 'id = ?', whereArgs: [id]);
   }

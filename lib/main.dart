@@ -720,7 +720,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   final TextEditingController _infoAdicionalController =
       TextEditingController();
   final TextEditingController _direccionController = TextEditingController();
-  final TextEditingController _fechaEntregaController = TextEditingController();
   final List<Map<String, dynamic>> _items = [];
   final TextEditingController _itemController = TextEditingController();
   final TextEditingController _precioController = TextEditingController();
@@ -731,8 +730,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   @override
   void initState() {
     super.initState();
-    _fechaEntregaController.text =
-        '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
     _loadClientes();
     _loadProductos();
   }
@@ -1044,12 +1041,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         'Fecha: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
         align: PrintAlign.center,
       );
-      if (_fechaEntregaController.text.isNotEmpty) {
-        ticket.text(
-          'Entrega: ${_fechaEntregaController.text}',
-          align: PrintAlign.center,
-        );
-      }
 
       ticket.text('================================', align: PrintAlign.center);
       ticket.text(
@@ -1131,6 +1122,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         'items': List.from(_items),
         'total': _total,
         'fecha': DateTime.now(),
+        'estado': 'Abierto',
       };
 
       widget.onFacturaCreada?.call(factura);
@@ -1260,11 +1252,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                         'Fecha: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
                         style: const TextStyle(fontSize: 10),
                       ),
-                      if (_fechaEntregaController.text.isNotEmpty)
-                        Text(
-                          'Entrega: ${_fechaEntregaController.text}',
-                          style: const TextStyle(fontSize: 10),
-                        ),
                       const SizedBox(height: 8),
                       const Text(
                         '================================',
@@ -1504,30 +1491,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                         prefixIcon: Icon(Icons.info_outline),
                       ),
                       maxLines: 2,
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _fechaEntregaController,
-                      decoration: const InputDecoration(
-                        labelText: 'Fecha de Entrega',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.event),
-                      ),
-                      readOnly: true,
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(
-                            const Duration(days: 365),
-                          ),
-                        );
-                        if (date != null) {
-                          _fechaEntregaController.text =
-                              '${date.day}/${date.month}/${date.year}';
-                        }
-                      },
                     ),
                   ],
                 ),
@@ -2406,12 +2369,40 @@ class _FacturasScreenState extends State<FacturasScreen> {
               itemCount: widget.facturas.length,
               itemBuilder: (context, index) {
                 final factura = widget.facturas[index];
+                final estado = factura['estado'] ?? 'Abierto';
                 return Card(
                   child: ListTile(
                     leading: const Icon(Icons.receipt, color: Colors.blue),
                     title: Text('Factura #${factura['numero_consecutivo']}'),
-                    subtitle: Text(
-                      '${factura['cliente']} - ${formatCOP(factura['total'] as double)}',
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${factura['cliente']} - ${formatCOP(factura['total'] as double)}',
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: estado == 'Abierto'
+                                ? Colors.orange.shade100
+                                : Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            estado,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: estado == 'Abierto'
+                                  ? Colors.orange.shade800
+                                  : Colors.green.shade800,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -2815,6 +2806,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
     );
     final items = List<Map<String, dynamic>>.from(factura['items']);
     double total = factura['total'];
+    String estado = factura['estado'] ?? 'Abierto';
 
     showModalBottomSheet(
       context: context,
@@ -2907,6 +2899,38 @@ class _FacturasScreenState extends State<FacturasScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Estado:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: const Text('Abierto'),
+                        value: 'Abierto',
+                        groupValue: estado,
+                        onChanged: (value) {
+                          setModalState(() => estado = value!);
+                        },
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: const Text('Cerrado'),
+                        value: 'Cerrado',
+                        groupValue: estado,
+                        onChanged: (value) {
+                          setModalState(() => estado = value!);
+                        },
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {
@@ -2917,6 +2941,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
                       'direccion': direccionController.text,
                       'items': items,
                       'total': total,
+                      'estado': estado,
                     };
                     widget.onFacturaActualizada?.call(index, updatedFactura);
                     Navigator.pop(context);
