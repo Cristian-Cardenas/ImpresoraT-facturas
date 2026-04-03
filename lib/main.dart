@@ -1138,6 +1138,11 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       if (negocio != null &&
           negocio['mensaje_pie'] != null &&
           negocio['mensaje_pie'].isNotEmpty) {
+        ticket.text(
+          'TERMINOS Y CONDICIONES',
+          align: PrintAlign.center,
+          style: const PrintTextStyle(bold: true),
+        );
         ticket.text(negocio['mensaje_pie'], align: PrintAlign.center);
       }
       if (negocio != null &&
@@ -1448,6 +1453,24 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                           ),
                         ],
                       ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['mensaje_pie'] != null &&
+                          widget.negocio!['mensaje_pie'].isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        const Text(
+                          'TERMINOS Y CONDICIONES',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          widget.negocio!['mensaje_pie'],
+                          style: const TextStyle(fontSize: 9),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       if (widget.negocio != null &&
                           widget.negocio!['sitio_web'] != null)
                         Text(
@@ -2769,6 +2792,11 @@ class _FacturasScreenState extends State<FacturasScreen> {
       if (negocio != null &&
           negocio['mensaje_pie'] != null &&
           negocio['mensaje_pie'].isNotEmpty) {
+        ticket.text(
+          'TERMINOS Y CONDICIONES',
+          align: PrintAlign.center,
+          style: const PrintTextStyle(bold: true),
+        );
         ticket.text(negocio['mensaje_pie'], align: PrintAlign.center);
       }
       if (negocio != null &&
@@ -3033,6 +3061,24 @@ class _FacturasScreenState extends State<FacturasScreen> {
                           ),
                         ],
                       ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['mensaje_pie'] != null &&
+                          widget.negocio!['mensaje_pie'].isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        const Text(
+                          'TERMINOS Y CONDICIONES',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          widget.negocio!['mensaje_pie'],
+                          style: const TextStyle(fontSize: 9),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       if (widget.negocio != null &&
                           widget.negocio!['sitio_web'] != null)
                         Text(
@@ -3544,12 +3590,23 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
                         style: TextStyle(fontSize: 10),
                       ),
                       const SizedBox(height: 8),
-                      if (_mensajePieController.text.isNotEmpty)
+                      if (_mensajePieController.text.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        const Text(
+                          'TERMINOS Y CONDICIONES',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
                         Text(
                           _mensajePieController.text,
                           style: const TextStyle(fontSize: 9),
                           textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 8),
+                      ],
                       const SizedBox(height: 8),
                       if (_sitioWebController.text.isNotEmpty)
                         Text(
@@ -3931,7 +3988,7 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Mensaje Final',
+                          'Terminos y Condiciones',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -3941,7 +3998,7 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
                         TextFormField(
                           controller: _mensajePieController,
                           decoration: const InputDecoration(
-                            labelText: 'Mensaje al pie de factura',
+                            labelText: 'Terminos y condiciones',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.message),
                           ),
