@@ -3311,9 +3311,28 @@ class _FacturasScreenState extends State<FacturasScreen> {
 
   void _editarFactura(int index, Map<String, dynamic> factura) {
     final clienteController = TextEditingController(text: factura['cliente']);
-    final telefonoController = TextEditingController(text: factura['telefono']);
+    final telefonoController = TextEditingController(
+      text: factura['telefono'] ?? '',
+    );
     final direccionController = TextEditingController(
-      text: factura['direccion'],
+      text: factura['direccion'] ?? '',
+    );
+    final emailController = TextEditingController(text: factura['email'] ?? '');
+    final documentoController = TextEditingController(
+      text: factura['documento'] ?? '',
+    );
+    final infoAdicionalController = TextEditingController(
+      text: factura['info_adicional'] ?? '',
+    );
+    final atendidoPorController = TextEditingController(
+      text: factura['atendido_por'] ?? '',
+    );
+    final modeloController = TextEditingController(
+      text: factura['modelo'] ?? '',
+    );
+    final serieController = TextEditingController(text: factura['serie'] ?? '');
+    final estadoActualController = TextEditingController(
+      text: factura['estado_actual'] ?? '',
     );
     final items = List<Map<String, dynamic>>.from(factura['items']);
     double total = factura['total'];
@@ -3368,6 +3387,70 @@ class _FacturasScreenState extends State<FacturasScreen> {
                     prefixIcon: Icon(Icons.location_on),
                   ),
                 ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: documentoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Documento',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.badge),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: infoAdicionalController,
+                  decoration: const InputDecoration(
+                    labelText: 'Info Adicional',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.info),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: atendidoPorController,
+                  decoration: const InputDecoration(
+                    labelText: 'Atendido Por',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: modeloController,
+                  decoration: const InputDecoration(
+                    labelText: 'Modelo',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.devices),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: serieController,
+                  decoration: const InputDecoration(
+                    labelText: 'Serie',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.qr_code),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: estadoActualController,
+                  decoration: const InputDecoration(
+                    labelText: 'Estado Actual',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.build),
+                  ),
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'Items:',
@@ -3420,6 +3503,8 @@ class _FacturasScreenState extends State<FacturasScreen> {
                   segments: const [
                     ButtonSegment(value: 'Abierto', label: Text('Abierto')),
                     ButtonSegment(value: 'Cerrado', label: Text('Cerrado')),
+                    ButtonSegment(value: 'Adeudo', label: Text('Adeudo')),
+                    ButtonSegment(value: 'Pagado', label: Text('Pagado')),
                   ],
                   selected: {estado},
                   onSelectionChanged: (newSelection) {
@@ -3434,6 +3519,13 @@ class _FacturasScreenState extends State<FacturasScreen> {
                       'cliente': clienteController.text,
                       'telefono': telefonoController.text,
                       'direccion': direccionController.text,
+                      'email': emailController.text,
+                      'documento': documentoController.text,
+                      'info_adicional': infoAdicionalController.text,
+                      'atendido_por': atendidoPorController.text,
+                      'modelo': modeloController.text,
+                      'serie': serieController.text,
+                      'estado_actual': estadoActualController.text,
                       'items': items,
                       'total': total,
                       'estado': estado,
