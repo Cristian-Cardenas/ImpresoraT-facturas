@@ -727,6 +727,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   final List<Map<String, dynamic>> _items = [];
   final TextEditingController _itemController = TextEditingController();
   final TextEditingController _precioController = TextEditingController();
+  final TextEditingController _abonoController = TextEditingController();
   List<Map<String, dynamic>> _clientes = [];
   Map<String, dynamic>? _clienteSeleccionado;
   List<Map<String, dynamic>> _productos = [];
@@ -969,6 +970,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   double get _total =>
       _items.fold(0.0, (sum, item) => sum + (item['precio'] as double));
 
+  double get _abono => double.tryParse(_abonoController.text) ?? 0.0;
+
+  double get _saldo => _total - _abono;
+
   Future<void> _imprimirFactura() async {
     if (widget.connectedPrinter == null) {
       setState(() => _status = 'No hay impresora conectada');
@@ -1135,6 +1140,19 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         style: const PrintTextStyle(bold: true, height: TextSize.size2),
       );
 
+      if (_abono > 0) {
+        ticket.text(
+          'ABONO: -${formatCOP(_abono)}',
+          align: PrintAlign.center,
+          style: const PrintTextStyle(bold: true),
+        );
+        ticket.text(
+          'SALDO: ${formatCOP(_saldo)}',
+          align: PrintAlign.center,
+          style: const PrintTextStyle(bold: true),
+        );
+      }
+
       if (negocio != null &&
           negocio['mensaje_pie'] != null &&
           negocio['mensaje_pie'].isNotEmpty) {
@@ -1187,8 +1205,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         'direccion': _direccionController.text,
         'items': List.from(_items),
         'total': _total,
+        'abono': _abono,
+        'saldo': _saldo,
         'fecha': DateTime.now(),
-        'estado': 'Abierto',
+        'estado': _saldo > 0 ? 'Adeudo' : 'Pagado',
         'atendido_por': _atendidoPorController.text,
         'modelo': _modeloController.text,
         'serie': _serieController.text,
@@ -1453,6 +1473,43 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                           ),
                         ],
                       ),
+                      if (_abono > 0) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'ABONO:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                            Text(
+                              '-${formatCOP(_abono)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'SALDO:',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              formatCOP(_saldo),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: _saldo > 0 ? Colors.red : Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       if (widget.negocio != null &&
                           widget.negocio!['mensaje_pie'] != null &&
                           widget.negocio!['mensaje_pie'].isNotEmpty) ...[
@@ -1839,27 +1896,104 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
             ),
             const SizedBox(height: 16),
             Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const Text(
+                      'ABONO / PAGO',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _abonoController,
+                      decoration: const InputDecoration(
+                        labelText: 'Monto de abono',
+                        prefixText: 'L ',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.payments),
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Card(
               color: Colors.blue.shade50,
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
                   children: [
-                    const Text(
-                      'TOTAL:',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'TOTAL:',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          formatCOP(_total),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      formatCOP(_total),
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade700,
+                    if (_abono > 0) ...[
+                      const Divider(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'ABONO:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '- ${formatCOP(_abono)}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const Divider(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'SALDO:',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            formatCOP(_saldo),
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: _saldo > 0 ? Colors.red : Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

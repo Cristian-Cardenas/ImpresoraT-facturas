@@ -118,6 +118,8 @@ class DatabaseHelper {
         direccion TEXT,
         items TEXT NOT NULL,
         total REAL NOT NULL,
+        abono REAL DEFAULT 0,
+        saldo REAL DEFAULT 0,
         fecha TEXT NOT NULL,
         estado TEXT NOT NULL DEFAULT 'Abierto',
         atendido_por TEXT,
