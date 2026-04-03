@@ -1113,6 +1113,12 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       }
 
       ticket.text('================================', align: PrintAlign.center);
+      ticket.text(
+        'PRODUCTOS Y/O SERVICIOS',
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true),
+      );
+      ticket.text('================================', align: PrintAlign.center);
 
       for (var item in _items) {
         ticket.text('${item['nombre']}', align: PrintAlign.left);
@@ -1395,6 +1401,17 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                           style: const TextStyle(fontSize: 10),
                         ),
                       const SizedBox(height: 8),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      const Text(
+                        'PRODUCTOS Y/O SERVICIOS',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const Text(
                         '================================',
                         style: TextStyle(fontSize: 10),
@@ -2727,6 +2744,12 @@ class _FacturasScreenState extends State<FacturasScreen> {
       }
 
       ticket.text('================================', align: PrintAlign.center);
+      ticket.text(
+        'PRODUCTOS Y/O SERVICIOS',
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true),
+      );
+      ticket.text('================================', align: PrintAlign.center);
 
       for (var item in factura['items']) {
         ticket.text('${item['nombre']}', align: PrintAlign.left);
@@ -2963,6 +2986,17 @@ class _FacturasScreenState extends State<FacturasScreen> {
                           style: const TextStyle(fontSize: 10),
                         ),
                       const SizedBox(height: 8),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      const Text(
+                        'PRODUCTOS Y/O SERVICIOS',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const Text(
                         '================================',
                         style: TextStyle(fontSize: 10),
