@@ -22,44 +22,105 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 7,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
+    if (oldVersion < 5) {
       await db.execute('''
-        CREATE TABLE IF NOT EXISTS contador (
-          id INTEGER PRIMARY KEY,
-          consecutivos INTEGER DEFAULT 1
+        CREATE TABLE IF NOT EXISTS clientes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nombre TEXT NOT NULL,
+          email TEXT,
+          telefono TEXT,
+          documento TEXT,
+          info_adicional TEXT
         )
       ''');
-      final existing = await db.query(
-        'contador',
-        where: 'id = ?',
-        whereArgs: [1],
-      );
-      if (existing.isEmpty) {
-        await db.insert('contador', {'id': 1, 'consecutivos': 1});
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS productos (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nombre TEXT NOT NULL,
+          precio REAL NOT NULL
+        )
+      ''');
+    }
+    if (oldVersion < 6) {
+      if (!await _columnExists(db, 'facturas', 'info_adicional')) {
+        await db.execute('ALTER TABLE facturas ADD COLUMN info_adicional TEXT');
       }
+      if (!await _columnExists(db, 'clientes', 'info_adicional')) {
+        await db.execute('ALTER TABLE clientes ADD COLUMN info_adicional TEXT');
+      }
+      if (!await _columnExists(db, 'facturas', 'email')) {
+        await db.execute('ALTER TABLE facturas ADD COLUMN email TEXT');
+      }
+      if (!await _columnExists(db, 'facturas', 'documento')) {
+        await db.execute('ALTER TABLE facturas ADD COLUMN documento TEXT');
+      }
+      if (!await _columnExists(db, 'facturas', 'cliente_id')) {
+        await db.execute('ALTER TABLE facturas ADD COLUMN cliente_id INTEGER');
+      }
+    }
+    if (oldVersion < 7) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS productos (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nombre TEXT NOT NULL,
+          precio REAL NOT NULL
+        )
+      ''');
+    }
+  }
+
+  Future<bool> _columnExists(Database db, String table, String column) async {
+    try {
+      final result = await db.rawQuery('PRAGMA table_info($table)');
+      return result.any((row) => row['name'] == column);
+    } catch (e) {
+      return false;
     }
   }
 
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''
+      CREATE TABLE clientes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        email TEXT,
+        telefono TEXT,
+        documento TEXT,
+        info_adicional TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE productos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        precio REAL NOT NULL
+      )
+    ''');
+
+    await db.execute('''
       CREATE TABLE facturas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         numero_consecutivo INTEGER NOT NULL,
         codigo_unico TEXT NOT NULL,
+        cliente_id INTEGER,
         cliente TEXT NOT NULL,
         telefono TEXT,
+        email TEXT,
+        documento TEXT,
+        info_adicional TEXT,
         direccion TEXT,
         items TEXT NOT NULL,
         total REAL NOT NULL,
         fecha TEXT NOT NULL,
-        fecha_entrega TEXT
+        FOREIGN KEY (cliente_id) REFERENCES clientes (id)
       )
     ''');
 
@@ -96,12 +157,10 @@ class DatabaseHelper {
   Future<int> getSiguienteConsecutivo() async {
     final db = await database;
     final result = await db.query('contador', where: 'id = ?', whereArgs: [1]);
-    return result.first['consecutivos'] as int;
-  }
-
-  Future<int> getSiguienteCodigoUnico() async {
-    final db = await database;
-    final result = await db.query('contador', where: 'id = ?', whereArgs: [1]);
+    if (result.isEmpty) {
+      await db.insert('contador', {'id': 1, 'consecutivos': 1});
+      return 1;
+    }
     return result.first['consecutivos'] as int;
   }
 
@@ -112,19 +171,21 @@ class DatabaseHelper {
     );
   }
 
-  // Facturas CRUD
   Future<int> insertFactura(Map<String, dynamic> factura) async {
     final db = await database;
     final data = {
       'numero_consecutivo': factura['numero_consecutivo'],
       'codigo_unico': factura['codigo_unico'],
+      'cliente_id': factura['cliente_id'],
       'cliente': factura['cliente'],
       'telefono': factura['telefono'] ?? '',
+      'email': factura['email'] ?? '',
+      'documento': factura['documento'] ?? '',
+      'info_adicional': factura['info_adicional'] ?? '',
       'direccion': factura['direccion'] ?? '',
       'items': jsonEncode(factura['items']),
       'total': factura['total'],
       'fecha': factura['fecha'].toString(),
-      'fecha_entrega': factura['fecha_entrega'] ?? '',
     };
     await db.insert('facturas', data);
     await incrementarContador();
@@ -139,13 +200,16 @@ class DatabaseHelper {
         'id': row['id'],
         'numero_consecutivo': row['numero_consecutivo'],
         'codigo_unico': row['codigo_unico'],
+        'cliente_id': row['cliente_id'],
         'cliente': row['cliente'],
         'telefono': row['telefono'],
+        'email': row['email'],
+        'documento': row['documento'],
+        'info_adicional': row['info_adicional'],
         'direccion': row['direccion'],
         'items': jsonDecode(row['items'] as String),
         'total': row['total'],
         'fecha': DateTime.parse(row['fecha'] as String),
-        'fecha_entrega': row['fecha_entrega'],
       };
     }).toList();
   }
@@ -155,10 +219,12 @@ class DatabaseHelper {
     final data = {
       'cliente': factura['cliente'],
       'telefono': factura['telefono'] ?? '',
+      'email': factura['email'] ?? '',
+      'documento': factura['documento'] ?? '',
+      'info_adicional': factura['info_adicional'] ?? '',
       'direccion': factura['direccion'] ?? '',
       'items': jsonEncode(factura['items']),
       'total': factura['total'],
-      'fecha_entrega': factura['fecha_entrega'] ?? '',
     };
     return await db.update('facturas', data, where: 'id = ?', whereArgs: [id]);
   }
@@ -168,13 +234,18 @@ class DatabaseHelper {
     return await db.delete('facturas', where: 'id = ?', whereArgs: [id]);
   }
 
-  // Negocio CRUD
   Future<int> saveNegocio(Map<String, dynamic> negocio) async {
     final db = await database;
     final existing = await db.query('negocio', limit: 1);
 
+    Uint8List? logoBytes;
+    if (negocio['logo'] != null) {
+      final logoImage = negocio['logo'] as img.Image;
+      logoBytes = Uint8List.fromList(img.encodePng(logoImage));
+    }
+
     final data = {
-      'logo': negocio['logo'],
+      'logo': logoBytes,
       'nombre': negocio['nombre'] ?? '',
       'nit': negocio['nit'] ?? '',
       'direccion': negocio['direccion'] ?? '',
@@ -235,5 +306,75 @@ class DatabaseHelper {
   Future<void> close() async {
     final db = await database;
     db.close();
+  }
+
+  Future<int> insertCliente(Map<String, dynamic> cliente) async {
+    final db = await database;
+    final existing = await db.query(
+      'clientes',
+      where: 'documento = ?',
+      whereArgs: [cliente['documento'] ?? ''],
+    );
+    final data = {
+      'nombre': cliente['nombre'] ?? '',
+      'email': cliente['email'] ?? '',
+      'telefono': cliente['telefono'] ?? '',
+      'documento': cliente['documento'] ?? '',
+      'info_adicional': cliente['info_adicional'] ?? '',
+    };
+    if (existing.isNotEmpty) {
+      await db.update(
+        'clientes',
+        data,
+        where: 'id = ?',
+        whereArgs: [existing.first['id']],
+      );
+      return existing.first['id'] as int;
+    }
+    return await db.insert('clientes', data);
+  }
+
+  Future<List<Map<String, dynamic>>> getClientes() async {
+    final db = await database;
+    return await db.query('clientes', orderBy: 'nombre ASC');
+  }
+
+  Future<Map<String, dynamic>?> getClienteById(int id) async {
+    final db = await database;
+    final results = await db.query(
+      'clientes',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (results.isEmpty) return null;
+    return results.first;
+  }
+
+  Future<int> insertProducto(Map<String, dynamic> producto) async {
+    final db = await database;
+    return await db.insert('productos', {
+      'nombre': producto['nombre'] ?? '',
+      'precio': producto['precio'] ?? 0.0,
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getProductos() async {
+    final db = await database;
+    return await db.query('productos', orderBy: 'nombre ASC');
+  }
+
+  Future<int> updateProducto(int id, Map<String, dynamic> producto) async {
+    final db = await database;
+    return await db.update(
+      'productos',
+      producto,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteProducto(int id) async {
+    final db = await database;
+    return await db.delete('productos', where: 'id = ?', whereArgs: [id]);
   }
 }

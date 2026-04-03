@@ -49,10 +49,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadFacturas() async {
-    final facturas = await DatabaseHelper.instance.getFacturas();
-    setState(() {
-      _facturas.addAll(facturas);
-    });
+    try {
+      final facturas = await DatabaseHelper.instance.getFacturas();
+      debugPrint('DEBUG: Facturas cargadas: ${facturas.length}');
+      setState(() {
+        _facturas.addAll(facturas);
+      });
+    } catch (e) {
+      debugPrint('DEBUG: Error cargando facturas: $e');
+    }
   }
 
   Future<void> _loadNegocio() async {
@@ -64,10 +69,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _addFactura(Map<String, dynamic> factura) async {
-    final id = await DatabaseHelper.instance.insertFactura(factura);
-    setState(() {
-      _facturas.insert(0, {...factura, 'id': id});
-    });
+    try {
+      debugPrint('DEBUG: Intentando guardar factura: $factura');
+      final id = await DatabaseHelper.instance.insertFactura(factura);
+      debugPrint('DEBUG: Factura guardada con ID: $id');
+      setState(() {
+        _facturas.insert(0, {...factura, 'id': id});
+      });
+    } catch (e) {
+      debugPrint('DEBUG: Error guardando factura: $e');
+    }
   }
 
   Future<void> _updateFactura(int index, Map<String, dynamic> factura) async {
@@ -149,23 +160,35 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Crear Factura'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CreateInvoiceScreen(
-                      printerManager: _printerManager,
-                      connectedPrinter: _connectedPrinter,
-                      onFacturaCreada: (factura) {
-                        _addFactura(factura);
-                      },
-                      getSiguienteConsecutivo: () async {
-                        return await DatabaseHelper.instance
-                            .getSiguienteConsecutivo();
-                      },
-                      negocio: _negocio,
+                if (_connectedPrinter == null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BluetoothScreen(
+                        printerManager: _printerManager,
+                        onStatusChange: _updatePrinterStatus,
+                      ),
                     ),
-                  ),
-                );
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CreateInvoiceScreen(
+                        printerManager: _printerManager,
+                        connectedPrinter: _connectedPrinter,
+                        onFacturaCreada: (factura) {
+                          _addFactura(factura);
+                        },
+                        getSiguienteConsecutivo: () async {
+                          return await DatabaseHelper.instance
+                              .getSiguienteConsecutivo();
+                        },
+                        negocio: _negocio,
+                      ),
+                    ),
+                  );
+                }
               },
             ),
             ListTile(
@@ -180,6 +203,32 @@ class _HomeScreenState extends State<HomeScreen> {
                       printerManager: _printerManager,
                       connectedPrinter: _connectedPrinter,
                     ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.people),
+              title: const Text('Clientes'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ClientesScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.inventory_2),
+              title: const Text('Productos'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProductosScreen(),
                   ),
                 );
               },
@@ -252,23 +301,37 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: 'Crear Factura',
                   subtitle: 'Generar nueva factura',
                   color: Colors.green,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CreateInvoiceScreen(
-                        printerManager: _printerManager,
-                        connectedPrinter: _connectedPrinter,
-                        onFacturaCreada: (factura) {
-                          _addFactura(factura);
-                        },
-                        getSiguienteConsecutivo: () async {
-                          return await DatabaseHelper.instance
-                              .getSiguienteConsecutivo();
-                        },
-                        negocio: _negocio,
-                      ),
-                    ),
-                  ),
+                  onTap: () {
+                    if (_connectedPrinter == null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BluetoothScreen(
+                            printerManager: _printerManager,
+                            onStatusChange: _updatePrinterStatus,
+                          ),
+                        ),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CreateInvoiceScreen(
+                            printerManager: _printerManager,
+                            connectedPrinter: _connectedPrinter,
+                            onFacturaCreada: (factura) {
+                              _addFactura(factura);
+                            },
+                            getSiguienteConsecutivo: () async {
+                              return await DatabaseHelper.instance
+                                  .getSiguienteConsecutivo();
+                            },
+                            negocio: _negocio,
+                          ),
+                        ),
+                      );
+                    }
+                  },
                 ),
                 const SizedBox(height: 16),
                 _buildOptionCard(
@@ -283,6 +346,32 @@ class _HomeScreenState extends State<HomeScreen> {
                         printerManager: _printerManager,
                         connectedPrinter: _connectedPrinter,
                       ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildOptionCard(
+                  icon: Icons.people,
+                  title: 'Clientes',
+                  subtitle: 'Ver clientes registrados',
+                  color: Colors.teal,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ClientesScreen(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildOptionCard(
+                  icon: Icons.inventory_2,
+                  title: 'Productos',
+                  subtitle: 'Ver productos y servicios',
+                  color: Colors.orange,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProductosScreen(),
                     ),
                   ),
                 ),
@@ -622,10 +711,183 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   String _status = 'Listo';
   final TextEditingController _clienteController = TextEditingController();
   final TextEditingController _telefonoController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _documentoController = TextEditingController();
+  final TextEditingController _infoAdicionalController =
+      TextEditingController();
   final TextEditingController _direccionController = TextEditingController();
+  final TextEditingController _fechaEntregaController = TextEditingController();
   final List<Map<String, dynamic>> _items = [];
   final TextEditingController _itemController = TextEditingController();
   final TextEditingController _precioController = TextEditingController();
+  List<Map<String, dynamic>> _clientes = [];
+  Map<String, dynamic>? _clienteSeleccionado;
+  List<Map<String, dynamic>> _productos = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fechaEntregaController.text =
+        '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
+    _loadClientes();
+    _loadProductos();
+  }
+
+  Future<void> _loadClientes() async {
+    final clientes = await DatabaseHelper.instance.getClientes();
+    setState(() {
+      _clientes = clientes;
+    });
+  }
+
+  Future<void> _loadProductos() async {
+    final productos = await DatabaseHelper.instance.getProductos();
+    setState(() {
+      _productos = productos;
+    });
+  }
+
+  void _seleccionarCliente(Map<String, dynamic> cliente) {
+    setState(() {
+      _clienteSeleccionado = cliente;
+      _clienteController.text = cliente['nombre'] ?? '';
+      _telefonoController.text = cliente['telefono'] ?? '';
+      _emailController.text = cliente['email'] ?? '';
+      _documentoController.text = cliente['documento'] ?? '';
+      _infoAdicionalController.text = cliente['info_adicional'] ?? '';
+      _direccionController.text = cliente['direccion'] ?? '';
+    });
+  }
+
+  Future<void> _guardarCliente() async {
+    if (_clienteController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ingrese el nombre del cliente')),
+      );
+      return;
+    }
+    final clienteId = await DatabaseHelper.instance.insertCliente({
+      'nombre': _clienteController.text,
+      'telefono': _telefonoController.text,
+      'email': _emailController.text,
+      'documento': _documentoController.text,
+      'info_adicional': _infoAdicionalController.text,
+    });
+    await _loadClientes();
+    setState(() {
+      _clienteSeleccionado = {
+        'id': clienteId,
+        'nombre': _clienteController.text,
+      };
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Cliente guardado')));
+    }
+  }
+
+  void _mostrarSelectorClientes() {
+    final searchController = TextEditingController();
+    List<Map<String, dynamic>> filteredClientes = _clientes;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          maxChildSize: 0.9,
+          minChildSize: 0.5,
+          expand: false,
+          builder: (context, scrollController) => Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Seleccionar Cliente',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Buscar cliente...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setModalState(() {
+                          filteredClientes = _clientes.where((c) {
+                            final nombre = (c['nombre'] ?? '').toLowerCase();
+                            final documento = (c['documento'] ?? '')
+                                .toLowerCase();
+                            final telefono = (c['telefono'] ?? '')
+                                .toLowerCase();
+                            final search = value.toLowerCase();
+                            return nombre.contains(search) ||
+                                documento.contains(search) ||
+                                telefono.contains(search);
+                          }).toList();
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Expanded(
+                child: filteredClientes.isEmpty
+                    ? const Center(child: Text('No hay clientes registrados'))
+                    : ListView.builder(
+                        controller: scrollController,
+                        itemCount: filteredClientes.length,
+                        itemBuilder: (context, index) {
+                          final cliente = filteredClientes[index];
+                          return ListTile(
+                            leading: const CircleAvatar(
+                              child: Icon(Icons.person),
+                            ),
+                            title: Text(cliente['nombre'] ?? ''),
+                            subtitle: Text(
+                              '${cliente['telefono'] ?? ''} - ${cliente['documento'] ?? ''}',
+                            ),
+                            onTap: () {
+                              _seleccionarCliente(cliente);
+                              Navigator.pop(context);
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   void _agregarItem() {
     if (_itemController.text.isNotEmpty && _precioController.text.isNotEmpty) {
@@ -638,6 +900,73 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         _precioController.clear();
       });
     }
+  }
+
+  void _mostrarSelectorProductos() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Seleccionar Producto',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            Expanded(
+              child: _productos.isEmpty
+                  ? const Center(child: Text('No hay productos registrados'))
+                  : ListView.builder(
+                      controller: scrollController,
+                      itemCount: _productos.length,
+                      itemBuilder: (context, index) {
+                        final producto = _productos[index];
+                        return ListTile(
+                          leading: const CircleAvatar(
+                            backgroundColor: Colors.orange,
+                            child: Icon(Icons.inventory, color: Colors.white),
+                          ),
+                          title: Text(producto['nombre'] ?? ''),
+                          subtitle: Text(
+                            '\$${producto['precio'].toStringAsFixed(2)}',
+                          ),
+                          onTap: () {
+                            setState(() {
+                              _items.add({
+                                'nombre': producto['nombre'],
+                                'precio': producto['precio'],
+                              });
+                            });
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   double get _total =>
@@ -656,20 +985,12 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       final negocio = widget.negocio;
       final ticket = await Ticket.create(PaperSize.mm58);
 
-      debugPrint('DEBUG: Logo data: ${negocio?['logo']}');
-
       if (negocio != null && negocio['logo'] != null) {
         try {
-          debugPrint('DEBUG: Trying to print logo...');
           final logoData = negocio['logo'] as img.Image;
-          debugPrint(
-            'DEBUG: Logo dimensions: ${logoData.width}x${logoData.height}',
-          );
           ticket.image(logoData, align: PrintAlign.center);
-          ticket.feed(1);
-          debugPrint('DEBUG: Logo printed successfully');
         } catch (e) {
-          debugPrint('DEBUG: Logo error: $e');
+          debugPrint('Error printing logo: $e');
         }
       }
 
@@ -690,11 +1011,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       if (negocio != null &&
           negocio['direccion'] != null &&
           negocio['direccion'].isNotEmpty) {
-        String direccion = negocio['direccion'];
-        if (negocio['ciudad'] != null && negocio['ciudad'].isNotEmpty) {
-          direccion += ', ${negocio['ciudad']}';
-        }
-        ticket.text(direccion, align: PrintAlign.center);
+        String dir = negocio['direccion'];
+        if (negocio['ciudad'] != null && negocio['ciudad'].isNotEmpty)
+          dir += ', ${negocio['ciudad']}';
+        ticket.text(dir, align: PrintAlign.center);
       }
       if (negocio != null &&
           negocio['telefono1'] != null &&
@@ -707,12 +1027,11 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         ticket.text(negocio['correo'], align: PrintAlign.center);
       }
 
-      ticket.feed(1);
       ticket.text('================================', align: PrintAlign.center);
-      ticket.feed(1);
 
       final numeroConsecutivo =
           await widget.getSiguienteConsecutivo?.call() ?? 1;
+      debugPrint('DEBUG: Número consecutivo: $numeroConsecutivo');
       final codigoUnico = 'FAC-$numeroConsecutivo';
 
       ticket.text(
@@ -725,31 +1044,29 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         'Fecha: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
         align: PrintAlign.center,
       );
+      if (_fechaEntregaController.text.isNotEmpty) {
+        ticket.text(
+          'Entrega: ${_fechaEntregaController.text}',
+          align: PrintAlign.center,
+        );
+      }
 
-      ticket.feed(1);
       ticket.text('================================', align: PrintAlign.center);
-      ticket.feed(1);
       ticket.text(
         'CLIENTE',
         align: PrintAlign.center,
         style: const PrintTextStyle(bold: true),
       );
       ticket.text('================================', align: PrintAlign.center);
-      ticket.feed(1);
 
-      if (_clienteController.text.isNotEmpty) {
+      if (_clienteController.text.isNotEmpty)
         ticket.text(_clienteController.text, align: PrintAlign.center);
-      }
-      if (_telefonoController.text.isNotEmpty) {
+      if (_telefonoController.text.isNotEmpty)
         ticket.text('Tel: ${_telefonoController.text}', align: PrintAlign.left);
-      }
-      if (_direccionController.text.isNotEmpty) {
+      if (_direccionController.text.isNotEmpty)
         ticket.text(_direccionController.text, align: PrintAlign.left);
-      }
 
-      ticket.feed(1);
       ticket.text('================================', align: PrintAlign.center);
-      ticket.feed(1);
 
       for (var item in _items) {
         ticket.text('${item['nombre']}', align: PrintAlign.left);
@@ -759,24 +1076,18 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         );
       }
 
-      ticket.feed(1);
       ticket.text('================================', align: PrintAlign.center);
-      ticket.feed(1);
       ticket.text(
         'TOTAL: \$${_total.toStringAsFixed(2)}',
         align: PrintAlign.center,
         style: const PrintTextStyle(bold: true, height: TextSize.size2),
       );
 
-      ticket.feed(2);
-
       if (negocio != null &&
           negocio['mensaje_pie'] != null &&
           negocio['mensaje_pie'].isNotEmpty) {
         ticket.text(negocio['mensaje_pie'], align: PrintAlign.center);
-        ticket.feed(1);
       }
-
       if (negocio != null &&
           negocio['sitio_web'] != null &&
           negocio['sitio_web'].isNotEmpty) {
@@ -801,17 +1112,21 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         ticket.text(negocio['instagram'], align: PrintAlign.center);
       }
 
-      ticket.feed(3);
+      ticket.feed(2);
       ticket.text('*** GRACIAS POR SU COMPRA ***', align: PrintAlign.center);
-      ticket.feed(5);
+      ticket.feed(3);
       ticket.cut();
       await widget.printerManager.printTicket(ticket);
 
       final factura = {
         'numero_consecutivo': numeroConsecutivo,
         'codigo_unico': codigoUnico,
+        'cliente_id': _clienteSeleccionado?['id'],
         'cliente': _clienteController.text,
         'telefono': _telefonoController.text,
+        'email': _emailController.text,
+        'documento': _documentoController.text,
+        'info_adicional': _infoAdicionalController.text,
         'direccion': _direccionController.text,
         'items': List.from(_items),
         'total': _total,
@@ -830,6 +1145,259 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         _isPrinting = false;
       });
     }
+  }
+
+  void _mostrarVistaPrevia() async {
+    if (_clienteController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ingrese el nombre del cliente')),
+      );
+      return;
+    }
+    if (_items.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Agregue al menos un item')));
+      return;
+    }
+    final numeroConsecutivo = await widget.getSiguienteConsecutivo?.call() ?? 1;
+    final codigoUnico = 'FAC-$numeroConsecutivo';
+
+    final negocio = await DatabaseHelper.instance.getNegocio();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        maxChildSize: 0.95,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const Text(
+                  'Vista Previa de Factura',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  width: 280,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (negocio != null && negocio['logo'] != null)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: const Icon(Icons.image, size: 40),
+                        ),
+                      if (negocio != null && negocio['nombre'] != null)
+                        Text(
+                          negocio['nombre'],
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      if (negocio != null && negocio['nit'] != null)
+                        Text(
+                          negocio['nit'],
+                          style: const TextStyle(fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      if (negocio != null && negocio['direccion'] != null)
+                        Text(
+                          '${negocio['direccion']}${negocio['ciudad'] != null ? ", ${negocio['ciudad']}" : ""}',
+                          style: const TextStyle(fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      if (negocio != null && negocio['telefono1'] != null)
+                        Text(
+                          'Tel: ${negocio['telefono1']}',
+                          style: const TextStyle(fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      if (negocio != null && negocio['correo'] != null)
+                        Text(
+                          negocio['correo'],
+                          style: const TextStyle(fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      Text(
+                        'FACTURA #$numeroConsecutivo',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(codigoUnico, style: const TextStyle(fontSize: 10)),
+                      Text(
+                        'Fecha: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                      if (_fechaEntregaController.text.isNotEmpty)
+                        Text(
+                          'Entrega: ${_fechaEntregaController.text}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      const Text(
+                        'CLIENTE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      const SizedBox(height: 8),
+                      if (_clienteController.text.isNotEmpty)
+                        Text(
+                          _clienteController.text,
+                          textAlign: TextAlign.center,
+                        ),
+                      if (_telefonoController.text.isNotEmpty)
+                        Text(
+                          'Tel: ${_telefonoController.text}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (_direccionController.text.isNotEmpty)
+                        Text(
+                          _direccionController.text,
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      ..._items.map(
+                        (item) => Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              item['nombre'],
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                            Text(
+                              '\$${item['precio'].toStringAsFixed(2)}',
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'TOTAL:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            '\$${_total.toStringAsFixed(2)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['sitio_web'] != null)
+                        Text(
+                          widget.negocio!['sitio_web'],
+                          style: const TextStyle(fontSize: 9),
+                        ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['whatsapp'] != null)
+                        Text(
+                          'WhatsApp: ${widget.negocio!['whatsapp']}',
+                          style: const TextStyle(fontSize: 9),
+                        ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['facebook'] != null)
+                        Text(
+                          widget.negocio!['facebook'],
+                          style: const TextStyle(fontSize: 9),
+                        ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['instagram'] != null)
+                        Text(
+                          widget.negocio!['instagram'],
+                          style: const TextStyle(fontSize: 9),
+                        ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        '*** GRACIAS POR SU COMPRA ***',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancelar'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _imprimirFactura();
+                        },
+                        icon: const Icon(Icons.print),
+                        label: const Text('Imprimir'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -851,40 +1419,115 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Datos del Cliente',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Datos del Cliente',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (_clientes.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: () => _mostrarSelectorClientes(),
+                            icon: const Icon(Icons.person_search, size: 18),
+                            label: const Text('Buscar'),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _clienteController,
+                            decoration: const InputDecoration(
+                              labelText: 'Nombre',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.person),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: _guardarCliente,
+                          icon: const Icon(Icons.save, color: Colors.green),
+                          tooltip: 'Guardar cliente',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _documentoController,
+                            decoration: const InputDecoration(
+                              labelText: 'Documento',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.badge),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: _telefonoController,
+                            decoration: const InputDecoration(
+                              labelText: 'Teléfono',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.phone),
+                            ),
+                            keyboardType: TextInputType.phone,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     TextField(
-                      controller: _clienteController,
+                      controller: _emailController,
                       decoration: const InputDecoration(
-                        labelText: 'Nombre',
+                        labelText: 'Email',
                         border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person),
+                        prefixIcon: Icon(Icons.email),
                       ),
+                      keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 12),
                     TextField(
-                      controller: _telefonoController,
+                      controller: _infoAdicionalController,
                       decoration: const InputDecoration(
-                        labelText: 'Teléfono',
+                        labelText: 'Info Adicional',
                         border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.phone),
+                        prefixIcon: Icon(Icons.info_outline),
                       ),
-                      keyboardType: TextInputType.phone,
+                      maxLines: 2,
                     ),
                     const SizedBox(height: 12),
                     TextField(
-                      controller: _direccionController,
+                      controller: _fechaEntregaController,
                       decoration: const InputDecoration(
-                        labelText: 'Dirección',
+                        labelText: 'Fecha de Entrega',
                         border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.location_on),
+                        prefixIcon: Icon(Icons.event),
                       ),
+                      readOnly: true,
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 365),
+                          ),
+                        );
+                        if (date != null) {
+                          _fechaEntregaController.text =
+                              '${date.day}/${date.month}/${date.year}';
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -915,6 +1558,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                               labelText: 'Producto/Servicio',
                               border: OutlineInputBorder(),
                             ),
+                            onChanged: (_) => setState(() {}),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -927,23 +1571,82 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                               prefixText: '\$ ',
                             ),
                             keyboardType: TextInputType.number,
+                            onChanged: (_) => setState(() {}),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _agregarItem,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Agregar'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _agregarItem,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Agregar'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: _mostrarSelectorProductos,
+                              icon: const Icon(Icons.search),
+                              label: const Text('Buscar'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.blue,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (_itemController.text.trim().isNotEmpty &&
+                        _precioController.text.trim().isNotEmpty)
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton.icon(
+                          onPressed: () async {
+                            if (_itemController.text.isEmpty ||
+                                _precioController.text.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Ingrese nombre y precio'),
+                                ),
+                              );
+                              return;
+                            }
+                            await DatabaseHelper.instance.insertProducto({
+                              'nombre': _itemController.text,
+                              'precio':
+                                  double.tryParse(_precioController.text) ??
+                                  0.0,
+                            });
+                            await _loadProductos();
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Producto guardado'),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.save, size: 18),
+                          label: const Text('Guardar como producto'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.green,
+                          ),
                         ),
                       ),
-                    ),
                     if (_items.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       const Divider(),
@@ -997,7 +1700,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: widget.connectedPrinter != null && !_isPrinting
-                  ? _imprimirFactura
+                  ? _mostrarVistaPrevia
                   : null,
               icon: _isPrinting
                   ? const SizedBox(
@@ -1032,6 +1735,646 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ClientesScreen extends StatefulWidget {
+  const ClientesScreen({super.key});
+  @override
+  State<ClientesScreen> createState() => _ClientesScreenState();
+}
+
+class _ClientesScreenState extends State<ClientesScreen> {
+  List<Map<String, dynamic>> _clientes = [];
+  List<Map<String, dynamic>> _filteredClientes = [];
+  final TextEditingController _searchController = TextEditingController();
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadClientes();
+  }
+
+  Future<void> _loadClientes() async {
+    final clientes = await DatabaseHelper.instance.getClientes();
+    setState(() {
+      _clientes = clientes;
+      _filteredClientes = clientes;
+      _isLoading = false;
+    });
+  }
+
+  void _filterClientes(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredClientes = _clientes;
+      } else {
+        _filteredClientes = _clientes.where((c) {
+          final nombre = (c['nombre'] ?? '').toLowerCase();
+          final documento = (c['documento'] ?? '').toLowerCase();
+          final telefono = (c['telefono'] ?? '').toLowerCase();
+          final search = query.toLowerCase();
+          return nombre.contains(search) ||
+              documento.contains(search) ||
+              telefono.contains(search);
+        }).toList();
+      }
+    });
+  }
+
+  void _mostrarEditarCliente(Map<String, dynamic> cliente) {
+    final nombreController = TextEditingController(text: cliente['nombre']);
+    final telefonoController = TextEditingController(text: cliente['telefono']);
+    final emailController = TextEditingController(text: cliente['email']);
+    final documentoController = TextEditingController(
+      text: cliente['documento'],
+    );
+    final infoController = TextEditingController(
+      text: cliente['info_adicional'],
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 16,
+          right: 16,
+          top: 16,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Editar Cliente',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nombreController,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: documentoController,
+                decoration: const InputDecoration(
+                  labelText: 'Documento',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.badge),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: telefonoController,
+                decoration: const InputDecoration(
+                  labelText: 'Teléfono',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.phone),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: infoController,
+                decoration: const InputDecoration(
+                  labelText: 'Info Adicional',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.info_outline),
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  await DatabaseHelper.instance.insertCliente({
+                    'nombre': nombreController.text,
+                    'telefono': telefonoController.text,
+                    'email': emailController.text,
+                    'documento': documentoController.text,
+                    'info_adicional': infoController.text,
+                  });
+                  await _loadClientes();
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Cliente actualizado')),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.all(16),
+                ),
+                child: const Text('Guardar'),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _eliminarCliente(Map<String, dynamic> cliente) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Cliente'),
+        content: Text('¿Estás seguro de eliminar a "${cliente['nombre']}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final db = await DatabaseHelper.instance.database;
+              await db.delete(
+                'clientes',
+                where: 'id = ?',
+                whereArgs: [cliente['id']],
+              );
+              await _loadClientes();
+              if (mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Cliente eliminado')),
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Clientes'),
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar clientes...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+              ),
+              onChanged: _filterClientes,
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredClientes.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.people_outline,
+                          size: 64,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _searchController.text.isEmpty
+                              ? 'No hay clientes registrados'
+                              : 'No se encontraron clientes',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _filteredClientes.length,
+                    itemBuilder: (context, index) {
+                      final cliente = _filteredClientes[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.blue.shade100,
+                            child: Text(
+                              (cliente['nombre'] ?? '')
+                                  .substring(0, 1)
+                                  .toUpperCase(),
+                              style: TextStyle(color: Colors.blue.shade700),
+                            ),
+                          ),
+                          title: Text(cliente['nombre'] ?? ''),
+                          subtitle: Text(
+                            '${cliente['telefono'] ?? ''} ${cliente['documento'] != null && cliente['documento'].isNotEmpty ? '- ${cliente['documento']}' : ''}',
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.orange,
+                                ),
+                                onPressed: () => _mostrarEditarCliente(cliente),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () => _eliminarCliente(cliente),
+                              ),
+                            ],
+                          ),
+                          onTap: () => _mostrarEditarCliente(cliente),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ProductosScreen extends StatefulWidget {
+  const ProductosScreen({super.key});
+  @override
+  State<ProductosScreen> createState() => _ProductosScreenState();
+}
+
+class _ProductosScreenState extends State<ProductosScreen> {
+  List<Map<String, dynamic>> _productos = [];
+  List<Map<String, dynamic>> _filteredProductos = [];
+  final TextEditingController _searchController = TextEditingController();
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProductos();
+  }
+
+  Future<void> _loadProductos() async {
+    final productos = await DatabaseHelper.instance.getProductos();
+    setState(() {
+      _productos = productos;
+      _filteredProductos = productos;
+      _isLoading = false;
+    });
+  }
+
+  void _filterProductos(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredProductos = _productos;
+      } else {
+        _filteredProductos = _productos.where((p) {
+          final nombre = (p['nombre'] ?? '').toLowerCase();
+          return nombre.contains(query.toLowerCase());
+        }).toList();
+      }
+    });
+  }
+
+  void _mostrarAgregarProducto() {
+    final nombreController = TextEditingController();
+    final precioController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 16,
+          right: 16,
+          top: 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Agregar Producto/Servicio',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nombreController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.inventory),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: precioController,
+              decoration: const InputDecoration(
+                labelText: 'Precio',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.attach_money),
+                prefixText: '\$ ',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                if (nombreController.text.isEmpty ||
+                    precioController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Complete todos los campos')),
+                  );
+                  return;
+                }
+                await DatabaseHelper.instance.insertProducto({
+                  'nombre': nombreController.text,
+                  'precio': double.tryParse(precioController.text) ?? 0.0,
+                });
+                await _loadProductos();
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Producto guardado')),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.all(16),
+              ),
+              child: const Text('Guardar'),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _mostrarEditarProducto(Map<String, dynamic> producto) {
+    final nombreController = TextEditingController(text: producto['nombre']);
+    final precioController = TextEditingController(
+      text: producto['precio'].toString(),
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 16,
+          right: 16,
+          top: 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Editar Producto/Servicio',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nombreController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.inventory),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: precioController,
+              decoration: const InputDecoration(
+                labelText: 'Precio',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.attach_money),
+                prefixText: '\$ ',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                if (nombreController.text.isEmpty ||
+                    precioController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Complete todos los campos')),
+                  );
+                  return;
+                }
+                await DatabaseHelper.instance.updateProducto(producto['id'], {
+                  'nombre': nombreController.text,
+                  'precio': double.tryParse(precioController.text) ?? 0.0,
+                });
+                await _loadProductos();
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Producto actualizado')),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.all(16),
+              ),
+              child: const Text('Guardar'),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _eliminarProducto(Map<String, dynamic> producto) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Producto'),
+        content: Text('¿Estás seguro de eliminar "${producto['nombre']}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await DatabaseHelper.instance.deleteProducto(producto['id']);
+              await _loadProductos();
+              if (mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Producto eliminado')),
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Productos y Servicios'),
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _mostrarAgregarProducto,
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.add),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar productos...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+              ),
+              onChanged: _filterProductos,
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredProductos.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.inventory_2,
+                          size: 64,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _searchController.text.isEmpty
+                              ? 'No hay productos registrados'
+                              : 'No se encontraron productos',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _filteredProductos.length,
+                    itemBuilder: (context, index) {
+                      final producto = _filteredProductos[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.orange.shade100,
+                            child: Icon(
+                              Icons.inventory,
+                              color: Colors.orange.shade700,
+                            ),
+                          ),
+                          title: Text(producto['nombre'] ?? ''),
+                          subtitle: Text(
+                            '\$${producto['precio'].toStringAsFixed(2)}',
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.orange,
+                                ),
+                                onPressed: () =>
+                                    _mostrarEditarProducto(producto),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () => _eliminarProducto(producto),
+                              ),
+                            ],
+                          ),
+                          onTap: () => _mostrarEditarProducto(producto),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -1108,7 +2451,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.print, color: Colors.green),
-                          onPressed: () => _imprimirFactura(factura),
+                          onPressed: () => _mostrarVistaPrevia(factura),
                         ),
                       ],
                     ),
@@ -1133,10 +2476,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
       if (negocio != null && negocio['logo'] != null) {
         try {
           ticket.image(negocio['logo'], align: PrintAlign.center);
-          ticket.feed(1);
-        } catch (e) {
-          // Continue without logo if image fails
-        }
+        } catch (e) {}
       }
 
       if (negocio != null &&
@@ -1156,11 +2496,10 @@ class _FacturasScreenState extends State<FacturasScreen> {
       if (negocio != null &&
           negocio['direccion'] != null &&
           negocio['direccion'].isNotEmpty) {
-        String direccion = negocio['direccion'];
-        if (negocio['ciudad'] != null && negocio['ciudad'].isNotEmpty) {
-          direccion += ', ${negocio['ciudad']}';
-        }
-        ticket.text(direccion, align: PrintAlign.center);
+        String dir = negocio['direccion'];
+        if (negocio['ciudad'] != null && negocio['ciudad'].isNotEmpty)
+          dir += ', ${negocio['ciudad']}';
+        ticket.text(dir, align: PrintAlign.center);
       }
       if (negocio != null &&
           negocio['telefono1'] != null &&
@@ -1173,9 +2512,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
         ticket.text(negocio['correo'], align: PrintAlign.center);
       }
 
-      ticket.feed(1);
       ticket.text('================================', align: PrintAlign.center);
-      ticket.feed(1);
 
       ticket.text(
         'FACTURA #${factura['numero_consecutivo']}',
@@ -1197,16 +2534,13 @@ class _FacturasScreenState extends State<FacturasScreen> {
         ticket.text('Fecha: $fechaStr', align: PrintAlign.center);
       }
 
-      ticket.feed(1);
       ticket.text('================================', align: PrintAlign.center);
-      ticket.feed(1);
       ticket.text(
         'CLIENTE',
         align: PrintAlign.center,
         style: const PrintTextStyle(bold: true),
       );
       ticket.text('================================', align: PrintAlign.center);
-      ticket.feed(1);
 
       if (factura['cliente'] != null && factura['cliente'].isNotEmpty) {
         ticket.text(factura['cliente'], align: PrintAlign.center);
@@ -1218,9 +2552,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
         ticket.text(factura['direccion'], align: PrintAlign.left);
       }
 
-      ticket.feed(1);
       ticket.text('================================', align: PrintAlign.center);
-      ticket.feed(1);
 
       for (var item in factura['items']) {
         ticket.text('${item['nombre']}', align: PrintAlign.left);
@@ -1230,24 +2562,18 @@ class _FacturasScreenState extends State<FacturasScreen> {
         );
       }
 
-      ticket.feed(1);
       ticket.text('================================', align: PrintAlign.center);
-      ticket.feed(1);
       ticket.text(
         'TOTAL: \$${factura['total'].toStringAsFixed(2)}',
         align: PrintAlign.center,
         style: const PrintTextStyle(bold: true, height: TextSize.size2),
       );
 
-      ticket.feed(2);
-
       if (negocio != null &&
           negocio['mensaje_pie'] != null &&
           negocio['mensaje_pie'].isNotEmpty) {
         ticket.text(negocio['mensaje_pie'], align: PrintAlign.center);
-        ticket.feed(1);
       }
-
       if (negocio != null &&
           negocio['sitio_web'] != null &&
           negocio['sitio_web'].isNotEmpty) {
@@ -1272,9 +2598,9 @@ class _FacturasScreenState extends State<FacturasScreen> {
         ticket.text(negocio['instagram'], align: PrintAlign.center);
       }
 
-      ticket.feed(3);
+      ticket.feed(2);
       ticket.text('*** GRACIAS POR SU COMPRA ***', align: PrintAlign.center);
-      ticket.feed(5);
+      ticket.feed(3);
       ticket.cut();
       await widget.printerManager.printTicket(ticket);
     } catch (e) {
@@ -1282,6 +2608,232 @@ class _FacturasScreenState extends State<FacturasScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
+  }
+
+  void _mostrarVistaPrevia(Map<String, dynamic> factura) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        maxChildSize: 0.95,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const Text(
+                  'Vista Previa de Factura',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  width: 280,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (widget.negocio != null &&
+                          widget.negocio!['nombre'] != null)
+                        Text(
+                          widget.negocio!['nombre'],
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['nit'] != null)
+                        Text(
+                          widget.negocio!['nit'],
+                          style: const TextStyle(fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['direccion'] != null)
+                        Text(
+                          '${widget.negocio!['direccion']}${widget.negocio!['ciudad'] != null ? ", ${widget.negocio!['ciudad']}" : ""}',
+                          style: const TextStyle(fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      Text(
+                        'FACTURA #${factura['numero_consecutivo']}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        factura['codigo_unico'] ?? '',
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                      Text(
+                        'Fecha: ${factura['fecha'] != null ? _formatFecha(factura['fecha']) : ""}',
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      const Text(
+                        'CLIENTE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      const SizedBox(height: 8),
+                      if (factura['cliente'] != null &&
+                          factura['cliente'].isNotEmpty)
+                        Text(factura['cliente'], textAlign: TextAlign.center),
+                      if (factura['telefono'] != null &&
+                          factura['telefono'].isNotEmpty)
+                        Text(
+                          'Tel: ${factura['telefono']}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      if (factura['direccion'] != null &&
+                          factura['direccion'].isNotEmpty)
+                        Text(
+                          factura['direccion'],
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      ...(factura['items'] as List).map(
+                        (item) => Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              item['nombre'],
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                            Text(
+                              '\$${item['precio'].toStringAsFixed(2)}',
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Text(
+                        '================================',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'TOTAL:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            '\$${factura['total'].toStringAsFixed(2)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['sitio_web'] != null)
+                        Text(
+                          widget.negocio!['sitio_web'],
+                          style: const TextStyle(fontSize: 9),
+                        ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['whatsapp'] != null)
+                        Text(
+                          'WhatsApp: ${widget.negocio!['whatsapp']}',
+                          style: const TextStyle(fontSize: 9),
+                        ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['facebook'] != null)
+                        Text(
+                          widget.negocio!['facebook'],
+                          style: const TextStyle(fontSize: 9),
+                        ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['instagram'] != null)
+                        Text(
+                          widget.negocio!['instagram'],
+                          style: const TextStyle(fontSize: 9),
+                        ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        '*** GRACIAS POR SU COMPRA ***',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancelar'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _imprimirFactura(factura);
+                        },
+                        icon: const Icon(Icons.print),
+                        label: const Text('Imprimir'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatFecha(dynamic fecha) {
+    if (fecha is DateTime) return '${fecha.day}/${fecha.month}/${fecha.year}';
+    if (fecha is String) return fecha;
+    return '';
   }
 
   void _editarFactura(int index, Map<String, dynamic> factura) {
@@ -1460,7 +3012,6 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
   late String _codigoUnico;
   late DateTime _fechaActual;
   bool _isLoadingConsecutivo = true;
-  final TextEditingController _fechaEntregaController = TextEditingController();
   final TextEditingController _mensajePieController = TextEditingController(
     text: 'Gracias por su compra. Vuelva pronto!',
   );
@@ -1482,8 +3033,6 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
   void initState() {
     super.initState();
     _fechaActual = DateTime.now();
-    _fechaEntregaController.text =
-        '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
     _loadNegocio();
     _loadConsecutivo();
   }
@@ -2010,30 +3559,6 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
                             prefixIcon: Icon(Icons.calendar_today),
                           ),
                           readOnly: true,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _fechaEntregaController,
-                          decoration: const InputDecoration(
-                            labelText: 'Fecha de Entrega',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.event),
-                          ),
-                          readOnly: true,
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime.now(),
-                              lastDate: DateTime.now().add(
-                                const Duration(days: 365),
-                              ),
-                            );
-                            if (date != null) {
-                              _fechaEntregaController.text =
-                                  '${date.day}/${date.month}/${date.year}';
-                            }
-                          },
                         ),
                       ],
                     ),
