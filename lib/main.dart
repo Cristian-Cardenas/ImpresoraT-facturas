@@ -2946,6 +2946,21 @@ class _FacturasScreenState extends State<FacturasScreen> {
         style: const PrintTextStyle(bold: true, height: TextSize.size2),
       );
 
+      final abono = (factura['abono'] as num?)?.toDouble() ?? 0.0;
+      if (abono > 0) {
+        final saldo = (factura['total'] as double) - abono;
+        ticket.text(
+          'ABONO: -${formatCOP(abono)}',
+          align: PrintAlign.center,
+          style: const PrintTextStyle(bold: true),
+        );
+        ticket.text(
+          'SALDO: ${formatCOP(saldo)}',
+          align: PrintAlign.center,
+          style: const PrintTextStyle(bold: true),
+        );
+      }
+
       if (negocio != null &&
           negocio['mensaje_pie'] != null &&
           negocio['mensaje_pie'].isNotEmpty) {
@@ -3043,7 +3058,19 @@ class _FacturasScreenState extends State<FacturasScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       if (widget.negocio != null &&
-                          widget.negocio!['nombre'] != null)
+                          widget.negocio!['logo'] != null)
+                        Container(
+                          width: 80,
+                          height: 80,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: Image.memory(
+                            widget.negocio!['logo'],
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['nombre'] != null &&
+                          widget.negocio!['nombre'].isNotEmpty)
                         Text(
                           widget.negocio!['nombre'],
                           style: const TextStyle(
@@ -3053,16 +3080,34 @@ class _FacturasScreenState extends State<FacturasScreen> {
                           textAlign: TextAlign.center,
                         ),
                       if (widget.negocio != null &&
-                          widget.negocio!['nit'] != null)
+                          widget.negocio!['nit'] != null &&
+                          widget.negocio!['nit'].isNotEmpty)
                         Text(
                           widget.negocio!['nit'],
                           style: const TextStyle(fontSize: 10),
                           textAlign: TextAlign.center,
                         ),
                       if (widget.negocio != null &&
-                          widget.negocio!['direccion'] != null)
+                          widget.negocio!['direccion'] != null &&
+                          widget.negocio!['direccion'].isNotEmpty)
                         Text(
-                          '${widget.negocio!['direccion']}${widget.negocio!['ciudad'] != null ? ", ${widget.negocio!['ciudad']}" : ""}',
+                          '${widget.negocio!['direccion']}${widget.negocio!['ciudad'] != null && widget.negocio!['ciudad'].isNotEmpty ? ", ${widget.negocio!['ciudad']}" : ""}',
+                          style: const TextStyle(fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['telefono1'] != null &&
+                          widget.negocio!['telefono1'].isNotEmpty)
+                        Text(
+                          'Tel: ${widget.negocio!['telefono1']}',
+                          style: const TextStyle(fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      if (widget.negocio != null &&
+                          widget.negocio!['correo'] != null &&
+                          widget.negocio!['correo'].isNotEmpty)
+                        Text(
+                          widget.negocio!['correo'],
                           style: const TextStyle(fontSize: 10),
                           textAlign: TextAlign.center,
                         ),
@@ -3101,37 +3146,37 @@ class _FacturasScreenState extends State<FacturasScreen> {
                       ),
                       const SizedBox(height: 8),
                       if (factura['cliente'] != null &&
-                          factura['cliente'].isNotEmpty)
+                          factura['cliente'].toString().isNotEmpty)
                         Text(
                           'Nombre: ${factura['cliente']}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       if (factura['documento'] != null &&
-                          factura['documento'].isNotEmpty)
+                          factura['documento'].toString().isNotEmpty)
                         Text(
                           'Documento: ${factura['documento']}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       if (factura['telefono'] != null &&
-                          factura['telefono'].isNotEmpty)
+                          factura['telefono'].toString().isNotEmpty)
                         Text(
                           'Telefono: ${factura['telefono']}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       if (factura['email'] != null &&
-                          factura['email'].isNotEmpty)
+                          factura['email'].toString().isNotEmpty)
                         Text(
                           'Correo: ${factura['email']}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       if (factura['info_adicional'] != null &&
-                          factura['info_adicional'].isNotEmpty)
+                          factura['info_adicional'].toString().isNotEmpty)
                         Text(
                           'Info Adicional: ${factura['info_adicional']}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       if (factura['direccion'] != null &&
-                          factura['direccion'].isNotEmpty)
+                          factura['direccion'].toString().isNotEmpty)
                         Text(
                           'Direccion: ${factura['direccion']}',
                           style: const TextStyle(fontSize: 10),
@@ -3153,25 +3198,25 @@ class _FacturasScreenState extends State<FacturasScreen> {
                         style: TextStyle(fontSize: 10),
                       ),
                       if (factura['atendido_por'] != null &&
-                          factura['atendido_por'].isNotEmpty)
+                          factura['atendido_por'].toString().isNotEmpty)
                         Text(
                           'Atendido por: ${factura['atendido_por']}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       if (factura['modelo'] != null &&
-                          factura['modelo'].isNotEmpty)
+                          factura['modelo'].toString().isNotEmpty)
                         Text(
                           'Modelo: ${factura['modelo']}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       if (factura['serie'] != null &&
-                          factura['serie'].isNotEmpty)
+                          factura['serie'].toString().isNotEmpty)
                         Text(
                           'Serie: ${factura['serie']}',
                           style: const TextStyle(fontSize: 10),
                         ),
                       if (factura['estado_actual'] != null &&
-                          factura['estado_actual'].isNotEmpty)
+                          factura['estado_actual'].toString().isNotEmpty)
                         Text(
                           'Estado Actual: ${factura['estado_actual']}',
                           style: const TextStyle(fontSize: 10),
@@ -3224,6 +3269,58 @@ class _FacturasScreenState extends State<FacturasScreen> {
                           ),
                         ],
                       ),
+                      Builder(
+                        builder: (context) {
+                          final abono =
+                              (factura['abono'] as num?)?.toDouble() ?? 0.0;
+                          if (abono > 0) {
+                            final saldo = (factura['total'] as double) - abono;
+                            return Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'ABONO:',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    Text(
+                                      '-${formatCOP(abono)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'SALDO:',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      formatCOP(saldo),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
                       if (widget.negocio != null &&
                           widget.negocio!['mensaje_pie'] != null &&
                           widget.negocio!['mensaje_pie'].isNotEmpty) ...[
@@ -3243,25 +3340,29 @@ class _FacturasScreenState extends State<FacturasScreen> {
                         const SizedBox(height: 8),
                       ],
                       if (widget.negocio != null &&
-                          widget.negocio!['sitio_web'] != null)
+                          widget.negocio!['sitio_web'] != null &&
+                          widget.negocio!['sitio_web'].toString().isNotEmpty)
                         Text(
                           widget.negocio!['sitio_web'],
                           style: const TextStyle(fontSize: 9),
                         ),
                       if (widget.negocio != null &&
-                          widget.negocio!['whatsapp'] != null)
+                          widget.negocio!['whatsapp'] != null &&
+                          widget.negocio!['whatsapp'].toString().isNotEmpty)
                         Text(
                           'WhatsApp: ${widget.negocio!['whatsapp']}',
                           style: const TextStyle(fontSize: 9),
                         ),
                       if (widget.negocio != null &&
-                          widget.negocio!['facebook'] != null)
+                          widget.negocio!['facebook'] != null &&
+                          widget.negocio!['facebook'].toString().isNotEmpty)
                         Text(
                           widget.negocio!['facebook'],
                           style: const TextStyle(fontSize: 9),
                         ),
                       if (widget.negocio != null &&
-                          widget.negocio!['instagram'] != null)
+                          widget.negocio!['instagram'] != null &&
+                          widget.negocio!['instagram'].toString().isNotEmpty)
                         Text(
                           widget.negocio!['instagram'],
                           style: const TextStyle(fontSize: 9),
