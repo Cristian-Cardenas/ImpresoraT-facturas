@@ -43,7 +43,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String _printerStatus = 'Sin conectar';
   final List<Map<String, dynamic>> _facturas = [];
   Map<String, dynamic>? _negocio;
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -68,7 +67,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final negocio = await DatabaseHelper.instance.getNegocio();
     setState(() {
       _negocio = negocio;
-      _isLoading = false;
     });
   }
 
@@ -669,12 +667,9 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
                       return Card(
                         child: ListTile(
                           leading: const Icon(Icons.print),
-                          title: Text(device.name ?? 'Impresora'),
+                          title: Text(device.name),
                           subtitle: Text(
-                            device is BluetoothPrinterDevice
-                                ? (device as BluetoothPrinterDevice).address ??
-                                      ''
-                                : '',
+                            (device as BluetoothPrinterDevice).address,
                           ),
                           trailing: _connectedPrinter?.name == device.name
                               ? const Icon(
@@ -2789,7 +2784,9 @@ class _FacturasScreenState extends State<FacturasScreen> {
       if (negocio != null && negocio['logo'] != null) {
         try {
           ticket.image(negocio['logo'], align: PrintAlign.center);
-        } catch (e) {}
+        } catch (e) {
+          debugPrint('Error printing logo: $e');
+        }
       }
 
       if (negocio != null &&
@@ -3419,31 +3416,15 @@ class _FacturasScreenState extends State<FacturasScreen> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: const Text('Abierto'),
-                        value: 'Abierto',
-                        groupValue: estado,
-                        onChanged: (value) {
-                          setModalState(() => estado = value!);
-                        },
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: const Text('Cerrado'),
-                        value: 'Cerrado',
-                        groupValue: estado,
-                        onChanged: (value) {
-                          setModalState(() => estado = value!);
-                        },
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'Abierto', label: Text('Abierto')),
+                    ButtonSegment(value: 'Cerrado', label: Text('Cerrado')),
                   ],
+                  selected: {estado},
+                  onSelectionChanged: (newSelection) {
+                    setModalState(() => estado = newSelection.first);
+                  },
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
@@ -3606,200 +3587,6 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
     }
   }
 
-  void _mostrarVistaPrevia() async {
-    await _loadConsecutivo(); // Refresh before showing preview
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        maxChildSize: 0.95,
-        minChildSize: 0.5,
-        expand: false,
-        builder: (context, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const Text(
-                  'Vista Previa de Factura',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  width: 280,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.white,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      if (_logoImageProcessed != null)
-                        Container(
-                          width: 80,
-                          height: 80,
-                          margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.memory(
-                              Uint8List.fromList(
-                                img.encodePng(_logoImageProcessed!),
-                              ),
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      Text(
-                        _nombreNegocioController.text,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _nitController.text,
-                        style: const TextStyle(fontSize: 10),
-                        textAlign: TextAlign.center,
-                      ),
-                      Text(
-                        '${_direccionController.text}, ${_ciudadController.text}',
-                        style: const TextStyle(fontSize: 10),
-                        textAlign: TextAlign.center,
-                      ),
-                      if (_telefono1Controller.text.isNotEmpty)
-                        Text(
-                          'Tel: ${_telefono1Controller.text}',
-                          style: const TextStyle(fontSize: 10),
-                        ),
-                      if (_correoController.text.isNotEmpty)
-                        Text(
-                          _correoController.text,
-                          style: const TextStyle(fontSize: 10),
-                        ),
-                      const Divider(height: 16),
-                      Text(
-                        'Factura #${_numeroConsecutivo}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(_codigoUnico, style: const TextStyle(fontSize: 10)),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Fecha: ${_fechaActual.day}/${_fechaActual.month}/${_fechaActual.year}',
-                        style: const TextStyle(fontSize: 10),
-                      ),
-                      const Divider(height: 16),
-                      const Text(
-                        '-----------------------------',
-                        style: TextStyle(fontSize: 10),
-                      ),
-                      const Text(
-                        'CLIENTE',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Text(
-                        '-----------------------------',
-                        style: TextStyle(fontSize: 10),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        '-----------------------------',
-                        style: TextStyle(fontSize: 10),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'TOTAL:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const Text(
-                            '\$0.00',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        '-----------------------------',
-                        style: TextStyle(fontSize: 10),
-                      ),
-                      const SizedBox(height: 8),
-                      if (_mensajePieController.text.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        const Text(
-                          'TERMINOS Y CONDICIONES',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _mensajePieController.text,
-                          style: const TextStyle(fontSize: 9),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      const SizedBox(height: 8),
-                      if (_sitioWebController.text.isNotEmpty)
-                        Text(
-                          _sitioWebController.text,
-                          style: const TextStyle(fontSize: 9),
-                        ),
-                      if (_whatsappController.text.isNotEmpty)
-                        Text(
-                          'WhatsApp: ${_whatsappController.text}',
-                          style: const TextStyle(fontSize: 9),
-                        ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        '*** FIN DEL TICKET ***',
-                        style: TextStyle(fontSize: 10),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Vista previa en papel de 58mm',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _seleccionarImagen() async {
     try {
       final XFile? image = await _picker.pickImage(
@@ -3831,11 +3618,6 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
         foregroundColor: Colors.white,
         elevation: 2,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.visibility),
-            onPressed: _mostrarVistaPrevia,
-            tooltip: 'Vista Previa',
-          ),
           IconButton(icon: const Icon(Icons.save), onPressed: _guardar),
         ],
       ),
