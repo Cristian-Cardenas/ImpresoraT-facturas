@@ -1188,8 +1188,14 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       }
 
       ticket.feed(2);
-      ticket.text('*** GRACIAS POR SU COMPRA ***', align: PrintAlign.center);
-      ticket.feed(3);
+      ticket.text(
+        'FIRMA DEL CLIENTE',
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true),
+      );
+      ticket.feed(4);
+      ticket.text('________________________', align: PrintAlign.center);
+      ticket.feed(2);
       ticket.cut();
       await widget.printerManager.printTicket(ticket);
 
@@ -1554,7 +1560,15 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                         ),
                       const SizedBox(height: 12),
                       const Text(
-                        '*** GRACIAS POR SU COMPRA ***',
+                        'FIRMA DEL CLIENTE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        '________________________',
                         style: TextStyle(fontSize: 10),
                       ),
                     ],
@@ -2958,8 +2972,14 @@ class _FacturasScreenState extends State<FacturasScreen> {
       }
 
       ticket.feed(2);
-      ticket.text('*** GRACIAS POR SU COMPRA ***', align: PrintAlign.center);
-      ticket.feed(3);
+      ticket.text(
+        'FIRMA DEL CLIENTE',
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true),
+      );
+      ticket.feed(4);
+      ticket.text('________________________', align: PrintAlign.center);
+      ticket.feed(2);
       ticket.cut();
       await widget.printerManager.printTicket(ticket);
     } catch (e) {
@@ -3239,7 +3259,15 @@ class _FacturasScreenState extends State<FacturasScreen> {
                         ),
                       const SizedBox(height: 12),
                       const Text(
-                        '*** GRACIAS POR SU COMPRA ***',
+                        'FIRMA DEL CLIENTE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        '________________________',
                         style: TextStyle(fontSize: 10),
                       ),
                     ],
