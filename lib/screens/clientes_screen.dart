@@ -73,85 +73,87 @@ class _ClientesScreenState extends State<ClientesScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 16,
-          right: 16,
-          top: 16,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Editar Cliente',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: nombreController,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 16,
+            right: 16,
+            top: 16,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Editar Cliente',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-              ),
-              const SizedBox(height: 12),
-              buildFormTextField(
-                controller: documentoController,
-                labelText: 'Documento',
-                prefixIcon: Icons.badge,
-              ),
-              const SizedBox(height: 12),
-              buildFormTextField(
-                controller: telefonoController,
-                labelText: 'Teléfono',
-                prefixIcon: Icons.phone,
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 12),
-              buildFormTextField(
-                controller: emailController,
-                labelText: 'Email',
-                prefixIcon: Icons.email,
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 12),
-              buildFormTextField(
-                controller: infoController,
-                labelText: 'Info Adicional',
-                prefixIcon: Icons.info_outline,
-                maxLines: 2,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () async {
-                  await DatabaseHelper.instance.insertCliente({
-                    'nombre': nombreController.text,
-                    'telefono': telefonoController.text,
-                    'email': emailController.text,
-                    'documento': documentoController.text,
-                    'info_adicional': infoController.text,
-                  });
-                  await _loadClientes();
-                  if (mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Cliente actualizado')),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.all(16),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nombreController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person),
+                  ),
                 ),
-                child: const Text('Guardar'),
-              ),
-              const SizedBox(height: 16),
-            ],
+                const SizedBox(height: 12),
+                buildFormTextField(
+                  controller: documentoController,
+                  labelText: 'Documento',
+                  prefixIcon: Icons.badge,
+                ),
+                const SizedBox(height: 12),
+                buildFormTextField(
+                  controller: telefonoController,
+                  labelText: 'Teléfono',
+                  prefixIcon: Icons.phone,
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 12),
+                buildFormTextField(
+                  controller: emailController,
+                  labelText: 'Email',
+                  prefixIcon: Icons.email,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 12),
+                buildFormTextField(
+                  controller: infoController,
+                  labelText: 'Info Adicional',
+                  prefixIcon: Icons.info_outline,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () async {
+                    await DatabaseHelper.instance.insertCliente({
+                      'nombre': nombreController.text,
+                      'telefono': telefonoController.text,
+                      'email': emailController.text,
+                      'documento': documentoController.text,
+                      'info_adicional': infoController.text,
+                    });
+                    await _loadClientes();
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Cliente actualizado')),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  child: const Text('Guardar'),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),
