@@ -107,7 +107,6 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Conexión Bluetooth'),
         backgroundColor: Colors.blue.shade700,

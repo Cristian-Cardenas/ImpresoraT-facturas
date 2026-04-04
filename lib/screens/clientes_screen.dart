@@ -21,6 +21,12 @@ class _ClientesScreenState extends State<ClientesScreen> {
     _loadClientes();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadClientes() async {
     final clientes = await DatabaseHelper.instance.getClientes();
     setState(() {
@@ -149,7 +155,13 @@ class _ClientesScreenState extends State<ClientesScreen> {
           ),
         ),
       ),
-    );
+    ).then((_) {
+      nombreController.dispose();
+      telefonoController.dispose();
+      emailController.dispose();
+      documentoController.dispose();
+      infoController.dispose();
+    });
   }
 
   void _eliminarCliente(Map<String, dynamic> cliente) {
@@ -165,12 +177,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
           ),
           TextButton(
             onPressed: () async {
-              final db = await DatabaseHelper.instance.database;
-              await db.delete(
-                'clientes',
-                where: 'id = ?',
-                whereArgs: [cliente['id']],
-              );
+              await DatabaseHelper.instance.deleteCliente(cliente['id']);
               await _loadClientes();
               if (mounted) {
                 Navigator.pop(context);
@@ -190,7 +197,6 @@ class _ClientesScreenState extends State<ClientesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Clientes'),
         backgroundColor: Colors.blue.shade700,

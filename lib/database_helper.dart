@@ -22,7 +22,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 8,
+      version: 9,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -109,6 +109,26 @@ class DatabaseHelper {
           ''');
           await db.execute('DROP TABLE facturas');
           await db.execute('ALTER TABLE facturas_new RENAME TO facturas');
+        }
+      }
+    }
+    if (oldVersion < 9) {
+      if (await _columnExists(db, 'productos', 'precio')) {
+        try {
+          await db.execute('ALTER TABLE productos DROP COLUMN precio');
+        } catch (e) {
+          await db.execute('''
+            CREATE TABLE productos_new (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              nombre TEXT NOT NULL
+            )
+          ''');
+          await db.execute('''
+            INSERT INTO productos_new (id, nombre)
+            SELECT id, nombre FROM productos
+          ''');
+          await db.execute('DROP TABLE productos');
+          await db.execute('ALTER TABLE productos_new RENAME TO productos');
         }
       }
     }
@@ -409,6 +429,11 @@ class DatabaseHelper {
     );
     if (results.isEmpty) return null;
     return results.first;
+  }
+
+  Future<int> deleteCliente(int id) async {
+    final db = await database;
+    return await db.delete('clientes', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<int> insertProducto(Map<String, dynamic> producto) async {

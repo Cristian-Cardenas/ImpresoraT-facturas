@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:unified_esc_pos_printer/unified_esc_pos_printer.dart';
 import '../database_helper.dart';
 import '../helpers/formatters.dart';
 import '../widgets/factura_list_tile.dart';
 import '../widgets/factura_preview_widget.dart';
+import '../services/ticket_printer_service.dart';
 
 class FacturasScreen extends StatefulWidget {
-  final PrinterManager printerManager;
-  final PrinterDevice? connectedPrinter;
+  final dynamic printerManager;
+  final dynamic connectedPrinter;
   final List<Map<String, dynamic>> facturas;
   final Function(int, Map<String, dynamic>)? onFacturaActualizada;
   final Map<String, dynamic>? negocio;
@@ -26,7 +26,16 @@ class FacturasScreen extends StatefulWidget {
 }
 
 class _FacturasScreenState extends State<FacturasScreen> {
+  late final TicketPrinterService _printerService;
   Key _listKey = UniqueKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _printerService = TicketPrinterService(
+      printerManager: widget.printerManager,
+    );
+  }
 
   void _refreshFacturas() async {
     final facturas = await DatabaseHelper.instance.getFacturas();
@@ -37,277 +46,13 @@ class _FacturasScreenState extends State<FacturasScreen> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final displayedFacturas = widget.facturas;
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        title: const Text('Facturas'),
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
-      ),
-      body: displayedFacturas.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.receipt_long,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No hay facturas creadas',
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Crea una factura en "Crear Factura"',
-                    style: TextStyle(color: Colors.grey.shade500),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              key: _listKey,
-              padding: const EdgeInsets.all(16),
-              itemCount: displayedFacturas.length,
-              itemBuilder: (context, index) {
-                final factura = displayedFacturas[index];
-                return FacturaListTile(
-                  factura: factura,
-                  onEditar: () => _editarFactura(index, factura),
-                  onImprimir: () => _mostrarVistaPrevia(factura),
-                );
-              },
-            ),
-    );
-  }
-
   Future<void> _imprimirFactura(Map<String, dynamic> factura) async {
-    if (widget.connectedPrinter == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No hay impresora conectada')),
-      );
-      return;
-    }
-    try {
-      final negocio = widget.negocio;
-      final ticket = await Ticket.create(PaperSize.mm58);
-
-      if (negocio != null && negocio['logo'] != null) {
-        try {
-          ticket.image(negocio['logo'], align: PrintAlign.center);
-        } catch (e) {
-          debugPrint('Error printing logo: $e');
-        }
-      }
-
-      if (negocio != null &&
-          negocio['nombre'] != null &&
-          negocio['nombre'].isNotEmpty) {
-        ticket.text(
-          negocio['nombre'],
-          align: PrintAlign.center,
-          style: const PrintTextStyle(bold: true),
-        );
-      }
-      if (negocio != null &&
-          negocio['nit'] != null &&
-          negocio['nit'].isNotEmpty) {
-        ticket.text(negocio['nit'], align: PrintAlign.center);
-      }
-      if (negocio != null &&
-          negocio['direccion'] != null &&
-          negocio['direccion'].isNotEmpty) {
-        String dir = negocio['direccion'];
-        if (negocio['ciudad'] != null && negocio['ciudad'].isNotEmpty)
-          dir += ', ${negocio['ciudad']}';
-        ticket.text(dir, align: PrintAlign.center);
-      }
-      if (negocio != null &&
-          negocio['telefono1'] != null &&
-          negocio['telefono1'].isNotEmpty) {
-        ticket.text('Tel: ${negocio['telefono1']}', align: PrintAlign.center);
-      }
-      if (negocio != null &&
-          negocio['correo'] != null &&
-          negocio['correo'].isNotEmpty) {
-        ticket.text(negocio['correo'], align: PrintAlign.center);
-      }
-
-      ticket.text('================================', align: PrintAlign.center);
-
-      ticket.text(
-        'FACTURA #${factura['numero_consecutivo']}',
-        align: PrintAlign.center,
-        style: const PrintTextStyle(bold: true),
-      );
-      ticket.text(factura['codigo_unico'] ?? '', align: PrintAlign.center);
-
-      String fechaStr = '';
-      if (factura['fecha'] != null) {
-        final fecha = factura['fecha'];
-        if (fecha is DateTime) {
-          fechaStr = '${fecha.day}/${fecha.month}/${fecha.year}';
-        } else if (fecha is String) {
-          fechaStr = fecha;
-        }
-      }
-      if (fechaStr.isNotEmpty) {
-        ticket.text('Fecha: $fechaStr', align: PrintAlign.center);
-      }
-
-      ticket.text('================================', align: PrintAlign.center);
-      ticket.text(
-        'CLIENTE',
-        align: PrintAlign.center,
-        style: const PrintTextStyle(bold: true),
-      );
-      ticket.text('================================', align: PrintAlign.center);
-
-      if (factura['cliente'] != null && factura['cliente'].isNotEmpty) {
-        ticket.text('Nombre: ${factura['cliente']}', align: PrintAlign.left);
-      }
-      if (factura['documento'] != null && factura['documento'].isNotEmpty) {
-        ticket.text(
-          'Documento: ${factura['documento']}',
-          align: PrintAlign.left,
-        );
-      }
-      if (factura['telefono'] != null && factura['telefono'].isNotEmpty) {
-        ticket.text('Telefono: ${factura['telefono']}', align: PrintAlign.left);
-      }
-      if (factura['email'] != null && factura['email'].isNotEmpty) {
-        ticket.text('Correo: ${factura['email']}', align: PrintAlign.left);
-      }
-      if (factura['info_adicional'] != null &&
-          factura['info_adicional'].isNotEmpty) {
-        ticket.text(
-          'Info Adicional: ${factura['info_adicional']}',
-          align: PrintAlign.left,
-        );
-      }
-
-      ticket.text('================================', align: PrintAlign.center);
-      ticket.text(
-        'OTROS DATOS',
-        align: PrintAlign.center,
-        style: const PrintTextStyle(bold: true),
-      );
-      ticket.text('================================', align: PrintAlign.center);
-
-      if (factura['atendido_por'] != null &&
-          factura['atendido_por'].isNotEmpty) {
-        ticket.text(
-          'Atendido por: ${factura['atendido_por']}',
-          align: PrintAlign.left,
-        );
-      }
-      if (factura['modelo'] != null && factura['modelo'].isNotEmpty) {
-        ticket.text('Modelo: ${factura['modelo']}', align: PrintAlign.left);
-      }
-      if (factura['serie'] != null && factura['serie'].isNotEmpty) {
-        ticket.text('Serie: ${factura['serie']}', align: PrintAlign.left);
-      }
-      if (factura['estado_actual'] != null &&
-          factura['estado_actual'].isNotEmpty) {
-        ticket.text(
-          'Estado Actual: ${factura['estado_actual']}',
-          align: PrintAlign.left,
-        );
-      }
-
-      ticket.text('================================', align: PrintAlign.center);
-      ticket.text(
-        'PRODUCTOS Y/O SERVICIOS',
-        align: PrintAlign.center,
-        style: const PrintTextStyle(bold: true),
-      );
-      ticket.text('================================', align: PrintAlign.center);
-
-      for (var item in factura['items']) {
-        ticket.text('${item['nombre']}', align: PrintAlign.left);
-        ticket.text(
-          formatCOP(item['precio'] as double),
-          align: PrintAlign.right,
-        );
-      }
-
-      ticket.text('================================', align: PrintAlign.center);
-      ticket.text(
-        'TOTAL: ${formatCOP(factura['total'] as double)}',
-        align: PrintAlign.center,
-        style: const PrintTextStyle(bold: true, height: TextSize.size2),
-      );
-
-      final abono = (factura['abono'] as num?)?.toDouble() ?? 0.0;
-      if (abono > 0) {
-        final saldo = (factura['total'] as double) - abono;
-        ticket.text(
-          'ABONO: -${formatCOP(abono)}',
-          align: PrintAlign.center,
-          style: const PrintTextStyle(bold: true),
-        );
-        ticket.text(
-          'SALDO: ${formatCOP(saldo)}',
-          align: PrintAlign.center,
-          style: const PrintTextStyle(bold: true),
-        );
-      }
-
-      if (negocio != null &&
-          negocio['mensaje_pie'] != null &&
-          negocio['mensaje_pie'].isNotEmpty) {
-        ticket.text(
-          'TERMINOS Y CONDICIONES',
-          align: PrintAlign.center,
-          style: const PrintTextStyle(bold: true),
-        );
-        ticket.text(negocio['mensaje_pie'], align: PrintAlign.center);
-      }
-      if (negocio != null &&
-          negocio['sitio_web'] != null &&
-          negocio['sitio_web'].isNotEmpty) {
-        ticket.text(negocio['sitio_web'], align: PrintAlign.center);
-      }
-      if (negocio != null &&
-          negocio['whatsapp'] != null &&
-          negocio['whatsapp'].isNotEmpty) {
-        ticket.text(
-          'WhatsApp: ${negocio['whatsapp']}',
-          align: PrintAlign.center,
-        );
-      }
-      if (negocio != null &&
-          negocio['facebook'] != null &&
-          negocio['facebook'].isNotEmpty) {
-        ticket.text(negocio['facebook'], align: PrintAlign.center);
-      }
-      if (negocio != null &&
-          negocio['instagram'] != null &&
-          negocio['instagram'].isNotEmpty) {
-        ticket.text(negocio['instagram'], align: PrintAlign.center);
-      }
-
-      ticket.feed(2);
-      ticket.text(
-        'FIRMA DEL CLIENTE',
-        align: PrintAlign.center,
-        style: const PrintTextStyle(bold: true),
-      );
-      ticket.feed(4);
-      ticket.text('________________________', align: PrintAlign.center);
-      ticket.feed(2);
-      ticket.cut();
-      await widget.printerManager.printTicket(ticket);
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
-    }
+    await _printerService.printTicketFromFactura(
+      connectedPrinter: widget.connectedPrinter,
+      context: context,
+      factura: factura,
+      negocio: widget.negocio,
+    );
   }
 
   void _mostrarVistaPrevia(Map<String, dynamic> factura) {
@@ -357,12 +102,6 @@ class _FacturasScreenState extends State<FacturasScreen> {
         ),
       ),
     );
-  }
-
-  String _formatFecha(dynamic fecha) {
-    if (fecha is DateTime) return '${fecha.day}/${fecha.month}/${fecha.year}';
-    if (fecha is String) return fecha;
-    return '';
   }
 
   void _editarFactura(int index, Map<String, dynamic> factura) {
@@ -563,6 +302,54 @@ class _FacturasScreenState extends State<FacturasScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayedFacturas = widget.facturas;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Facturas'),
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
+      ),
+      body: displayedFacturas.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.receipt_long,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No hay facturas creadas',
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Crea una factura en "Crear Factura"',
+                    style: TextStyle(color: Colors.grey.shade500),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              key: _listKey,
+              padding: const EdgeInsets.all(16),
+              itemCount: displayedFacturas.length,
+              itemBuilder: (context, index) {
+                final factura = displayedFacturas[index];
+                return FacturaListTile(
+                  factura: factura,
+                  onEditar: () => _editarFactura(index, factura),
+                  onImprimir: () => _mostrarVistaPrevia(factura),
+                );
+              },
+            ),
     );
   }
 }

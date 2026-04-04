@@ -149,10 +149,11 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
         setState(() => _logoImageProcessed = processedImage);
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error al seleccionar imagen: $e')),
         );
+      }
     }
   }
 

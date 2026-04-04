@@ -20,6 +20,12 @@ class _ProductosScreenState extends State<ProductosScreen> {
     _loadProductos();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadProductos() async {
     final productos = await DatabaseHelper.instance.getProductos();
     setState(() {
@@ -108,7 +114,7 @@ class _ProductosScreenState extends State<ProductosScreen> {
           ],
         ),
       ),
-    );
+    ).then((_) => nombreController.dispose());
   }
 
   void _mostrarEditarProducto(Map<String, dynamic> producto) {
@@ -177,7 +183,7 @@ class _ProductosScreenState extends State<ProductosScreen> {
           ],
         ),
       ),
-    );
+    ).then((_) => nombreController.dispose());
   }
 
   void _eliminarProducto(Map<String, dynamic> producto) {
@@ -213,7 +219,6 @@ class _ProductosScreenState extends State<ProductosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Productos y Servicios'),
         backgroundColor: Colors.blue.shade700,

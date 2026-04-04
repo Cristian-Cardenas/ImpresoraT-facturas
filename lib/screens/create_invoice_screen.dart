@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:unified_esc_pos_printer/unified_esc_pos_printer.dart';
-import 'package:flutter/services.dart';
-import 'package:image/image.dart' as img;
 import '../database_helper.dart';
 import '../helpers/formatters.dart';
 import '../widgets/factura_preview_widget.dart';
+import '../services/ticket_printer_service.dart';
 
 class CreateInvoiceScreen extends StatefulWidget {
-  final PrinterManager printerManager;
-  final PrinterDevice? connectedPrinter;
+  final dynamic printerManager;
+  final dynamic connectedPrinter;
   final Function(Map<String, dynamic>)? onFacturaCreada;
   final Future<int> Function()? getSiguienteConsecutivo;
   final Map<String, dynamic>? negocio;
@@ -27,8 +25,7 @@ class CreateInvoiceScreen extends StatefulWidget {
 }
 
 class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
-  bool _isPrinting = false;
-  String _status = 'Listo';
+  late final TicketPrinterService _printerService;
   final TextEditingController _clienteController = TextEditingController();
   final TextEditingController _telefonoController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -51,18 +48,39 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   @override
   void initState() {
     super.initState();
+    _printerService = TicketPrinterService(
+      printerManager: widget.printerManager,
+    );
     _loadClientes();
     _loadProductos();
   }
 
+  @override
+  void dispose() {
+    _clienteController.dispose();
+    _telefonoController.dispose();
+    _emailController.dispose();
+    _documentoController.dispose();
+    _infoAdicionalController.dispose();
+    _direccionController.dispose();
+    _atendidoPorController.dispose();
+    _modeloController.dispose();
+    _serieController.dispose();
+    _estadoActualController.dispose();
+    _itemController.dispose();
+    _precioController.dispose();
+    _abonoController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadClientes() async {
     final clientes = await DatabaseHelper.instance.getClientes();
-    setState(() => _clientes = clientes);
+    if (mounted) setState(() => _clientes = clientes);
   }
 
   Future<void> _loadProductos() async {
     final productos = await DatabaseHelper.instance.getProductos();
-    setState(() => _productos = productos);
+    if (mounted) setState(() => _productos = productos);
   }
 
   double get _total => _items.fold(
@@ -82,25 +100,47 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
 
   Future<void> _imprimirFactura() async {
     if (widget.connectedPrinter == null) {
-      setState(() => _status = 'No hay impresora conectada');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay impresora conectada')),
+      );
       return;
     }
-    setState(() {
-      _isPrinting = true;
-      _status = 'Imprimiendo...';
-    });
+    setState(() {});
     try {
       final numeroConsecutivo =
           await widget.getSiguienteConsecutivo?.call() ?? 1;
       final codigoUnico = 'FAC-$numeroConsecutivo';
-      final facturaData = {
+
+      await _printerService.printTicketFromControllers(
+        connectedPrinter: widget.connectedPrinter,
+        context: context,
+        negocio: widget.negocio,
+        cliente: _clienteController.text,
+        documento: _documentoController.text,
+        telefono: _telefonoController.text,
+        email: _emailController.text,
+        infoAdicional: _infoAdicionalController.text,
+        direccion: _direccionController.text,
+        atendidoPor: _atendidoPorController.text,
+        modelo: _modeloController.text,
+        serie: _serieController.text,
+        estadoActual: _estadoActualController.text,
+        items: List.from(_items),
+        total: _total,
+        abono: _abono,
+        numeroConsecutivo: numeroConsecutivo,
+      );
+
+      final factura = {
         'numero_consecutivo': numeroConsecutivo,
         'codigo_unico': codigoUnico,
+        'cliente_id': _clienteSeleccionado?['id'],
         'cliente': _clienteController.text,
         'telefono': _telefonoController.text,
         'email': _emailController.text,
         'documento': _documentoController.text,
         'info_adicional': _infoAdicionalController.text,
+        'direccion': _direccionController.text,
         'items': List.from(_items),
         'total': _total,
         'abono': _abono,
@@ -112,169 +152,22 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         'serie': _serieController.text,
         'estado_actual': _estadoActualController.text,
       };
-      final negocio = widget.negocio;
-      final ticket = await Ticket.create(PaperSize.mm58);
-      if (negocio != null && negocio['logo'] != null) {
-        try {
-          ticket.image(negocio['logo'] as img.Image, align: PrintAlign.center);
-        } catch (e) {
-          debugPrint('Error printing logo: $e');
-        }
+
+      widget.onFacturaCreada?.call(factura);
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Impresión completada')));
       }
-      if (negocio != null &&
-          negocio['nombre'] != null &&
-          negocio['nombre'].isNotEmpty)
-        ticket.text(
-          negocio['nombre'],
-          align: PrintAlign.center,
-          style: const PrintTextStyle(bold: true),
-        );
-      if (negocio != null &&
-          negocio['nit'] != null &&
-          negocio['nit'].isNotEmpty)
-        ticket.text(negocio['nit'], align: PrintAlign.center);
-      if (negocio != null &&
-          negocio['direccion'] != null &&
-          negocio['direccion'].isNotEmpty)
-        ticket.text(
-          '${negocio['direccion']}${negocio['ciudad'] != null ? ", ${negocio['ciudad']}" : ""}',
-          align: PrintAlign.center,
-        );
-      if (negocio != null &&
-          negocio['telefono1'] != null &&
-          negocio['telefono1'].isNotEmpty)
-        ticket.text('Tel: ${negocio['telefono1']}', align: PrintAlign.center);
-      if (negocio != null &&
-          negocio['correo'] != null &&
-          negocio['correo'].isNotEmpty)
-        ticket.text(negocio['correo'], align: PrintAlign.center);
-      ticket.text('================================', align: PrintAlign.center);
-      ticket.text(
-        'FACTURA #$numeroConsecutivo',
-        align: PrintAlign.center,
-        style: const PrintTextStyle(bold: true),
-      );
-      ticket.text(codigoUnico, align: PrintAlign.center);
-      ticket.text(
-        'Fecha: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-        align: PrintAlign.center,
-      );
-      ticket.text('================================', align: PrintAlign.center);
-      ticket.text(
-        'CLIENTE',
-        align: PrintAlign.center,
-        style: const PrintTextStyle(bold: true),
-      );
-      ticket.text('================================', align: PrintAlign.center);
-      if (_clienteController.text.isNotEmpty)
-        ticket.text(
-          'Nombre: ${_clienteController.text}',
-          align: PrintAlign.left,
-        );
-      if (_documentoController.text.isNotEmpty)
-        ticket.text(
-          'Documento: ${_documentoController.text}',
-          align: PrintAlign.left,
-        );
-      if (_telefonoController.text.isNotEmpty)
-        ticket.text(
-          'Telefono: ${_telefonoController.text}',
-          align: PrintAlign.left,
-        );
-      if (_emailController.text.isNotEmpty)
-        ticket.text('Correo: ${_emailController.text}', align: PrintAlign.left);
-      if (_infoAdicionalController.text.isNotEmpty)
-        ticket.text(
-          'Info Adicional: ${_infoAdicionalController.text}',
-          align: PrintAlign.left,
-        );
-      ticket.text('================================', align: PrintAlign.center);
-      ticket.text(
-        'OTROS DATOS',
-        align: PrintAlign.center,
-        style: const PrintTextStyle(bold: true),
-      );
-      ticket.text('================================', align: PrintAlign.center);
-      if (_atendidoPorController.text.isNotEmpty)
-        ticket.text(
-          'Atendido por: ${_atendidoPorController.text}',
-          align: PrintAlign.left,
-        );
-      if (_modeloController.text.isNotEmpty)
-        ticket.text(
-          'Modelo: ${_modeloController.text}',
-          align: PrintAlign.left,
-        );
-      if (_serieController.text.isNotEmpty)
-        ticket.text('Serie: ${_serieController.text}', align: PrintAlign.left);
-      if (_estadoActualController.text.isNotEmpty)
-        ticket.text(
-          'Estado Actual: ${_estadoActualController.text}',
-          align: PrintAlign.left,
-        );
-      ticket.text('================================', align: PrintAlign.center);
-      ticket.text(
-        'PRODUCTOS Y/O SERVICIOS',
-        align: PrintAlign.center,
-        style: const PrintTextStyle(bold: true),
-      );
-      ticket.text('================================', align: PrintAlign.center);
-      for (var item in _items) {
-        ticket.text('${item['nombre']}', align: PrintAlign.left);
-        ticket.text(
-          formatCOP((item['precio'] as num?)?.toDouble() ?? 0.0),
-          align: PrintAlign.right,
-        );
-      }
-      ticket.text('================================', align: PrintAlign.center);
-      ticket.text(
-        'TOTAL: ${formatCOP(_total)}',
-        align: PrintAlign.center,
-        style: const PrintTextStyle(bold: true, height: TextSize.size2),
-      );
-      if (_abono > 0) {
-        ticket.text(
-          'ABONO: -${formatCOP(_abono)}',
-          align: PrintAlign.center,
-          style: const PrintTextStyle(bold: true),
-        );
-        ticket.text(
-          'SALDO: ${formatCOP(_saldo)}',
-          align: PrintAlign.center,
-          style: const PrintTextStyle(bold: true),
-        );
-      }
-      if (negocio != null &&
-          negocio['mensaje_pie'] != null &&
-          negocio['mensaje_pie'].isNotEmpty) {
-        ticket.text(
-          'TERMINOS Y CONDICIONES',
-          align: PrintAlign.center,
-          style: const PrintTextStyle(bold: true),
-        );
-        ticket.text(negocio['mensaje_pie'], align: PrintAlign.center);
-      }
-      ticket.feed(2);
-      ticket.text(
-        'FIRMA DEL CLIENTE',
-        align: PrintAlign.center,
-        style: const PrintTextStyle(bold: true),
-      );
-      ticket.feed(4);
-      ticket.text('________________________', align: PrintAlign.center);
-      ticket.feed(2);
-      ticket.cut();
-      await widget.printerManager.printTicket(ticket);
-      widget.onFacturaCreada?.call(facturaData);
-      setState(() {
-        _status = 'Impresión completada';
-        _isPrinting = false;
-      });
     } catch (e) {
-      setState(() {
-        _status = 'Error: $e';
-        _isPrinting = false;
-      });
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al imprimir: $e')));
+      }
+    } finally {
+      if (mounted) setState(() {});
     }
   }
 
@@ -293,6 +186,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     }
     final numeroConsecutivo = await widget.getSiguienteConsecutivo?.call() ?? 1;
     final codigoUnico = 'FAC-$numeroConsecutivo';
+
     final facturaData = {
       'numero_consecutivo': numeroConsecutivo,
       'codigo_unico': codigoUnico,
@@ -301,6 +195,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       'email': _emailController.text,
       'documento': _documentoController.text,
       'info_adicional': _infoAdicionalController.text,
+      'direccion': _direccionController.text,
       'atendido_por': _atendidoPorController.text,
       'modelo': _modeloController.text,
       'serie': _serieController.text,
@@ -310,6 +205,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       'abono': _abono,
       'fecha': DateTime.now(),
     };
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -358,10 +254,204 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     );
   }
 
+  void _mostrarSelectorClientes() {
+    final searchController = TextEditingController();
+    List<Map<String, dynamic>> filteredClientes = _clientes;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          maxChildSize: 0.9,
+          minChildSize: 0.5,
+          expand: false,
+          builder: (context, scrollController) => Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Seleccionar Cliente',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Buscar cliente...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setModalState(() {
+                          filteredClientes = _clientes.where((c) {
+                            final nombre = (c['nombre'] ?? '').toLowerCase();
+                            final documento = (c['documento'] ?? '')
+                                .toLowerCase();
+                            final telefono = (c['telefono'] ?? '')
+                                .toLowerCase();
+                            final search = value.toLowerCase();
+                            return nombre.contains(search) ||
+                                documento.contains(search) ||
+                                telefono.contains(search);
+                          }).toList();
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Expanded(
+                child: filteredClientes.isEmpty
+                    ? const Center(child: Text('No hay clientes registrados'))
+                    : ListView.builder(
+                        controller: scrollController,
+                        itemCount: filteredClientes.length,
+                        itemBuilder: (context, index) {
+                          final cliente = filteredClientes[index];
+                          return ListTile(
+                            leading: const CircleAvatar(
+                              child: Icon(Icons.person),
+                            ),
+                            title: Text(cliente['nombre'] ?? ''),
+                            subtitle: Text(
+                              '${cliente['telefono'] ?? ''} - ${cliente['documento'] ?? ''}',
+                            ),
+                            onTap: () {
+                              _seleccionarCliente(cliente);
+                              Navigator.pop(context);
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).then((_) => searchController.dispose());
+  }
+
+  void _seleccionarCliente(Map<String, dynamic> cliente) {
+    setState(() {
+      _clienteSeleccionado = cliente;
+      _clienteController.text = cliente['nombre'] ?? '';
+      _telefonoController.text = cliente['telefono'] ?? '';
+      _emailController.text = cliente['email'] ?? '';
+      _documentoController.text = cliente['documento'] ?? '';
+      _infoAdicionalController.text = cliente['info_adicional'] ?? '';
+      _direccionController.text = cliente['direccion'] ?? '';
+    });
+  }
+
+  void _guardarCliente() async {
+    if (_clienteController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ingrese el nombre del cliente')),
+      );
+      return;
+    }
+    await DatabaseHelper.instance.insertCliente({
+      'nombre': _clienteController.text,
+      'telefono': _telefonoController.text,
+      'email': _emailController.text,
+      'documento': _documentoController.text,
+      'info_adicional': _infoAdicionalController.text,
+    });
+    await _loadClientes();
+    setState(() {
+      _clienteSeleccionado = {
+        'id': _clientes.firstWhere(
+          (c) => c['nombre'] == _clienteController.text,
+          orElse: () => {'id': 0},
+        )['id'],
+        'nombre': _clienteController.text,
+      };
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Cliente guardado')));
+    }
+  }
+
+  void _mostrarSelectorProductos() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text(
+              'Seleccionar Producto',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Divider(),
+            Expanded(
+              child: _productos.isEmpty
+                  ? const Center(child: Text('No hay productos'))
+                  : ListView.builder(
+                      controller: scrollController,
+                      itemCount: _productos.length,
+                      itemBuilder: (context, index) => ListTile(
+                        leading: const CircleAvatar(
+                          backgroundColor: Colors.orange,
+                          child: Icon(Icons.inventory, color: Colors.white),
+                        ),
+                        title: Text(_productos[index]['nombre']),
+                        onTap: () {
+                          _itemController.text = _productos[index]['nombre'];
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Crear Factura'),
         backgroundColor: Colors.blue.shade700,
@@ -378,24 +468,32 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Datos del Cliente',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Datos del Cliente',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (_clientes.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: _mostrarSelectorClientes,
+                            icon: const Icon(Icons.person_search, size: 18),
+                            label: const Text('Buscar'),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
-                          child: TextField(
+                          child: buildFormTextField(
                             controller: _clienteController,
-                            decoration: const InputDecoration(
-                              labelText: 'Nombre',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.person),
-                            ),
+                            labelText: 'Nombre',
+                            prefixIcon: Icons.person,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -410,47 +508,41 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: TextField(
+                          child: buildFormTextField(
                             controller: _documentoController,
-                            decoration: const InputDecoration(
-                              labelText: 'Documento',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.badge),
-                            ),
+                            labelText: 'Documento',
+                            prefixIcon: Icons.badge,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: TextField(
+                          child: buildFormTextField(
                             controller: _telefonoController,
-                            decoration: const InputDecoration(
-                              labelText: 'Teléfono',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.phone),
-                            ),
+                            labelText: 'Teléfono',
+                            prefixIcon: Icons.phone,
                             keyboardType: TextInputType.phone,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    TextField(
+                    buildFormTextField(
                       controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.email),
-                      ),
+                      labelText: 'Email',
+                      prefixIcon: Icons.email,
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 12),
-                    TextField(
+                    buildFormTextField(
+                      controller: _direccionController,
+                      labelText: 'Dirección',
+                      prefixIcon: Icons.location_on,
+                    ),
+                    const SizedBox(height: 12),
+                    buildFormTextField(
                       controller: _infoAdicionalController,
-                      decoration: const InputDecoration(
-                        labelText: 'Info Adicional',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.info_outline),
-                      ),
+                      labelText: 'Info Adicional',
+                      prefixIcon: Icons.info_outline,
                       maxLines: 2,
                     ),
                   ],
@@ -472,40 +564,28 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    TextField(
+                    buildFormTextField(
                       controller: _atendidoPorController,
-                      decoration: const InputDecoration(
-                        labelText: 'Atendido por',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
+                      labelText: 'Atendido por',
+                      prefixIcon: Icons.person_outline,
                     ),
                     const SizedBox(height: 12),
-                    TextField(
+                    buildFormTextField(
                       controller: _modeloController,
-                      decoration: const InputDecoration(
-                        labelText: 'Modelo',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.devices),
-                      ),
+                      labelText: 'Modelo',
+                      prefixIcon: Icons.devices,
                     ),
                     const SizedBox(height: 12),
-                    TextField(
+                    buildFormTextField(
                       controller: _serieController,
-                      decoration: const InputDecoration(
-                        labelText: 'Serie',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.tag),
-                      ),
+                      labelText: 'Serie',
+                      prefixIcon: Icons.tag,
                     ),
                     const SizedBox(height: 12),
-                    TextField(
+                    buildFormTextField(
                       controller: _estadoActualController,
-                      decoration: const InputDecoration(
-                        labelText: 'Estado Actual',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.check_circle_outline),
-                      ),
+                      labelText: 'Estado Actual',
+                      prefixIcon: Icons.check_circle_outline,
                     ),
                   ],
                 ),
@@ -518,12 +598,23 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Productos/Servicios',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Productos/Servicios',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (_productos.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: _mostrarSelectorProductos,
+                            icon: const Icon(Icons.search, size: 18),
+                            label: const Text('Buscar'),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -573,9 +664,31 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                         ),
                         const SizedBox(width: 8),
                         OutlinedButton.icon(
-                          onPressed: () => _mostrarSelectorProductos(),
-                          icon: const Icon(Icons.list),
-                          label: const Text('Buscar'),
+                          onPressed: () async {
+                            if (_itemController.text.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Ingrese el nombre del producto',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+                            await DatabaseHelper.instance.insertProducto({
+                              'nombre': _itemController.text,
+                            });
+                            await _loadProductos();
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Producto guardado'),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.save, size: 18),
+                          label: const Text('Guardar producto'),
                         ),
                       ],
                     ),
@@ -705,159 +818,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 foregroundColor: Colors.white,
               ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _isPrinting ? null : _imprimirFactura,
-                    icon: _isPrinting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.print),
-                    label: Text(_isPrinting ? 'Imprimiendo...' : 'Imprimir'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.all(16),
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _guardarSinImprimir,
-                    icon: const Icon(Icons.save),
-                    label: const Text('Guardar'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.all(16),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _status,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: _status.contains('Error') ? Colors.red : Colors.green,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _guardarCliente() async {
-    if (_clienteController.text.isEmpty) return;
-    await DatabaseHelper.instance.insertCliente({
-      'nombre': _clienteController.text,
-      'telefono': _telefonoController.text,
-      'email': _emailController.text,
-      'documento': _documentoController.text,
-      'info_adicional': _infoAdicionalController.text,
-    });
-    await _loadClientes();
-    if (mounted)
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Cliente guardado')));
-  }
-
-  void _guardarSinImprimir() async {
-    if (_clienteController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ingrese el nombre del cliente')),
-      );
-      return;
-    }
-    if (_items.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Agregue al menos un item')));
-      return;
-    }
-    final numeroConsecutivo = await widget.getSiguienteConsecutivo?.call() ?? 1;
-    final factura = {
-      'numero_consecutivo': numeroConsecutivo,
-      'codigo_unico': 'FAC-$numeroConsecutivo',
-      'cliente': _clienteController.text,
-      'telefono': _telefonoController.text,
-      'email': _emailController.text,
-      'documento': _documentoController.text,
-      'info_adicional': _infoAdicionalController.text,
-      'items': List.from(_items),
-      'total': _total,
-      'abono': _abono,
-      'saldo': _saldo,
-      'fecha': DateTime.now(),
-      'estado': _saldo > 0 ? 'Adeudo' : 'Pagado',
-      'atendido_por': _atendidoPorController.text,
-      'modelo': _modeloController.text,
-      'serie': _serieController.text,
-      'estado_actual': _estadoActualController.text,
-    };
-    widget.onFacturaCreada?.call(factura);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Factura guardada')));
-  }
-
-  void _mostrarSelectorProductos() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        maxChildSize: 0.9,
-        minChildSize: 0.5,
-        expand: false,
-        builder: (context, scrollController) => Column(
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const Text(
-              'Seleccionar Producto',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Expanded(
-              child: _productos.isEmpty
-                  ? const Center(child: Text('No hay productos'))
-                  : ListView.builder(
-                      controller: scrollController,
-                      itemCount: _productos.length,
-                      itemBuilder: (context, index) => ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: Colors.orange,
-                          child: Icon(Icons.inventory, color: Colors.white),
-                        ),
-                        title: Text(_productos[index]['nombre']),
-                        onTap: () {
-                          _agregarItem(
-                            _productos[index]['nombre'],
-                            (_productos[index]['precio'] as num?)?.toDouble() ??
-                                0.0,
-                          );
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
