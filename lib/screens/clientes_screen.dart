@@ -202,97 +202,100 @@ class _ClientesScreenState extends State<ClientesScreen> {
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar clientes...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Buscar clientes...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
                 ),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+                onChanged: _filterClientes,
               ),
-              onChanged: _filterClientes,
             ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredClientes.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.people_outline,
-                          size: 64,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _searchController.text.isEmpty
-                              ? 'No hay clientes registrados'
-                              : 'No se encontraron clientes',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey.shade600,
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _filteredClientes.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 64,
+                            color: Colors.grey.shade400,
                           ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _filteredClientes.length,
-                    itemBuilder: (context, index) {
-                      final cliente = _filteredClientes[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.blue.shade100,
-                            child: Text(
-                              (cliente['nombre'] ?? '')
-                                  .substring(0, 1)
-                                  .toUpperCase(),
-                              style: TextStyle(color: Colors.blue.shade700),
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchController.text.isEmpty
+                                ? 'No hay clientes registrados'
+                                : 'No se encontraron clientes',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade600,
                             ),
                           ),
-                          title: Text(cliente['nombre'] ?? ''),
-                          subtitle: Text(
-                            '${cliente['telefono'] ?? ''} ${cliente['documento'] != null && cliente['documento'].isNotEmpty ? '- ${cliente['documento']}' : ''}',
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.orange,
-                                ),
-                                onPressed: () => _mostrarEditarCliente(cliente),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _filteredClientes.length,
+                      itemBuilder: (context, index) {
+                        final cliente = _filteredClientes[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.blue.shade100,
+                              child: Text(
+                                (cliente['nombre'] ?? '')
+                                    .substring(0, 1)
+                                    .toUpperCase(),
+                                style: TextStyle(color: Colors.blue.shade700),
                               ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
+                            ),
+                            title: Text(cliente['nombre'] ?? ''),
+                            subtitle: Text(
+                              '${cliente['telefono'] ?? ''} ${cliente['documento'] != null && cliente['documento'].isNotEmpty ? '- ${cliente['documento']}' : ''}',
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.orange,
+                                  ),
+                                  onPressed: () =>
+                                      _mostrarEditarCliente(cliente),
                                 ),
-                                onPressed: () => _eliminarCliente(cliente),
-                              ),
-                            ],
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () => _eliminarCliente(cliente),
+                                ),
+                              ],
+                            ),
+                            onTap: () => _mostrarEditarCliente(cliente),
                           ),
-                          onTap: () => _mostrarEditarCliente(cliente),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

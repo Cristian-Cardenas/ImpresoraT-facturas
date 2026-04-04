@@ -368,75 +368,77 @@ class _FacturasScreenState extends State<FacturasScreen> {
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar facturas...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade100,
-              ),
-              onChanged: _filterFacturas,
-            ),
-          ),
-          Expanded(
-            child: _filteredFacturas.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.receipt_long,
-                          size: 64,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _searchController.text.isEmpty
-                              ? 'No hay facturas creadas'
-                              : 'No se encontraron facturas',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        if (_searchController.text.isEmpty)
-                          Text(
-                            'Crea una factura en "Crear Factura"',
-                            style: TextStyle(color: Colors.grey.shade500),
-                          ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    key: _listKey,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _filteredFacturas.length,
-                    itemBuilder: (context, index) {
-                      final factura = _filteredFacturas[index];
-                      final originalIndex = widget.facturas.indexWhere(
-                        (f) => f['id'] == factura['id'],
-                      );
-                      return FacturaListTile(
-                        factura: factura,
-                        onEditar: () => _editarFactura(
-                          originalIndex >= 0 ? originalIndex : index,
-                          factura,
-                        ),
-                        onImprimir: () => _mostrarVistaPrevia(factura),
-                      );
-                    },
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Buscar facturas...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-          ),
-        ],
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                ),
+                onChanged: _filterFacturas,
+              ),
+            ),
+            Expanded(
+              child: _filteredFacturas.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.receipt_long,
+                            size: 64,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchController.text.isEmpty
+                                ? 'No hay facturas creadas'
+                                : 'No se encontraron facturas',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          if (_searchController.text.isEmpty)
+                            Text(
+                              'Crea una factura en "Crear Factura"',
+                              style: TextStyle(color: Colors.grey.shade500),
+                            ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      key: _listKey,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _filteredFacturas.length,
+                      itemBuilder: (context, index) {
+                        final factura = _filteredFacturas[index];
+                        final originalIndex = widget.facturas.indexWhere(
+                          (f) => f['id'] == factura['id'],
+                        );
+                        return FacturaListTile(
+                          factura: factura,
+                          onEditar: () => _editarFactura(
+                            originalIndex >= 0 ? originalIndex : index,
+                            factura,
+                          ),
+                          onImprimir: () => _mostrarVistaPrevia(factura),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

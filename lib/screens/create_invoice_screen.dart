@@ -457,369 +457,372 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Datos del Cliente',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Datos del Cliente',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        if (_clientes.isNotEmpty)
-                          TextButton.icon(
-                            onPressed: _mostrarSelectorClientes,
-                            icon: const Icon(Icons.person_search, size: 18),
-                            label: const Text('Buscar'),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: buildFormTextField(
-                            controller: _clienteController,
-                            labelText: 'Nombre',
-                            prefixIcon: Icons.person,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: _guardarCliente,
-                          icon: const Icon(Icons.save, color: Colors.green),
-                          tooltip: 'Guardar cliente',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: buildFormTextField(
-                            controller: _documentoController,
-                            labelText: 'Documento',
-                            prefixIcon: Icons.badge,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: buildFormTextField(
-                            controller: _telefonoController,
-                            labelText: 'Teléfono',
-                            prefixIcon: Icons.phone,
-                            keyboardType: TextInputType.phone,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    buildFormTextField(
-                      controller: _emailController,
-                      labelText: 'Email',
-                      prefixIcon: Icons.email,
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 12),
-                    buildFormTextField(
-                      controller: _direccionController,
-                      labelText: 'Dirección',
-                      prefixIcon: Icons.location_on,
-                    ),
-                    const SizedBox(height: 12),
-                    buildFormTextField(
-                      controller: _infoAdicionalController,
-                      labelText: 'Info Adicional',
-                      prefixIcon: Icons.info_outline,
-                      maxLines: 2,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Otros Datos',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                          if (_clientes.isNotEmpty)
+                            TextButton.icon(
+                              onPressed: _mostrarSelectorClientes,
+                              icon: const Icon(Icons.person_search, size: 18),
+                              label: const Text('Buscar'),
+                            ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    buildFormTextField(
-                      controller: _atendidoPorController,
-                      labelText: 'Atendido por',
-                      prefixIcon: Icons.person_outline,
-                    ),
-                    const SizedBox(height: 12),
-                    buildFormTextField(
-                      controller: _modeloController,
-                      labelText: 'Modelo',
-                      prefixIcon: Icons.devices,
-                    ),
-                    const SizedBox(height: 12),
-                    buildFormTextField(
-                      controller: _serieController,
-                      labelText: 'Serie',
-                      prefixIcon: Icons.tag,
-                    ),
-                    const SizedBox(height: 12),
-                    buildFormTextField(
-                      controller: _estadoActualController,
-                      labelText: 'Estado Actual',
-                      prefixIcon: Icons.check_circle_outline,
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: buildFormTextField(
+                              controller: _clienteController,
+                              labelText: 'Nombre',
+                              prefixIcon: Icons.person,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            onPressed: _guardarCliente,
+                            icon: const Icon(Icons.save, color: Colors.green),
+                            tooltip: 'Guardar cliente',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: buildFormTextField(
+                              controller: _documentoController,
+                              labelText: 'Documento',
+                              prefixIcon: Icons.badge,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: buildFormTextField(
+                              controller: _telefonoController,
+                              labelText: 'Teléfono',
+                              prefixIcon: Icons.phone,
+                              keyboardType: TextInputType.phone,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      buildFormTextField(
+                        controller: _emailController,
+                        labelText: 'Email',
+                        prefixIcon: Icons.email,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 12),
+                      buildFormTextField(
+                        controller: _direccionController,
+                        labelText: 'Dirección',
+                        prefixIcon: Icons.location_on,
+                      ),
+                      const SizedBox(height: 12),
+                      buildFormTextField(
+                        controller: _infoAdicionalController,
+                        labelText: 'Info Adicional',
+                        prefixIcon: Icons.info_outline,
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Productos/Servicios',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Otros Datos',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
-                        if (_productos.isNotEmpty)
-                          TextButton.icon(
-                            onPressed: _mostrarSelectorProductos,
-                            icon: const Icon(Icons.search, size: 18),
-                            label: const Text('Buscar'),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _itemController,
-                            decoration: const InputDecoration(
-                              labelText: 'Item',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.inventory),
+                      ),
+                      const SizedBox(height: 12),
+                      buildFormTextField(
+                        controller: _atendidoPorController,
+                        labelText: 'Atendido por',
+                        prefixIcon: Icons.person_outline,
+                      ),
+                      const SizedBox(height: 12),
+                      buildFormTextField(
+                        controller: _modeloController,
+                        labelText: 'Modelo',
+                        prefixIcon: Icons.devices,
+                      ),
+                      const SizedBox(height: 12),
+                      buildFormTextField(
+                        controller: _serieController,
+                        labelText: 'Serie',
+                        prefixIcon: Icons.tag,
+                      ),
+                      const SizedBox(height: 12),
+                      buildFormTextField(
+                        controller: _estadoActualController,
+                        labelText: 'Estado Actual',
+                        prefixIcon: Icons.check_circle_outline,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Productos/Servicios',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 120,
-                          child: TextField(
-                            controller: _precioController,
-                            decoration: const InputDecoration(
-                              labelText: 'Precio',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.attach_money),
+                          if (_productos.isNotEmpty)
+                            TextButton.icon(
+                              onPressed: _mostrarSelectorProductos,
+                              icon: const Icon(Icons.search, size: 18),
+                              label: const Text('Buscar'),
                             ),
-                            keyboardType: TextInputType.number,
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _itemController,
+                              decoration: const InputDecoration(
+                                labelText: 'Item',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.inventory),
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              if (_itemController.text.isNotEmpty &&
-                                  _precioController.text.isNotEmpty) {
-                                _agregarItem(
-                                  _itemController.text,
-                                  double.tryParse(_precioController.text) ?? 0,
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            width: 120,
+                            child: TextField(
+                              controller: _precioController,
+                              decoration: const InputDecoration(
+                                labelText: 'Precio',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.attach_money),
+                              ),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                if (_itemController.text.isNotEmpty &&
+                                    _precioController.text.isNotEmpty) {
+                                  _agregarItem(
+                                    _itemController.text,
+                                    double.tryParse(_precioController.text) ??
+                                        0,
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.add),
+                              label: const Text('Agregar'),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              if (_itemController.text.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Ingrese el nombre del producto',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              await DatabaseHelper.instance.insertProducto({
+                                'nombre': _itemController.text,
+                              });
+                              await _loadProductos();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Producto guardado'),
+                                  ),
                                 );
                               }
                             },
-                            icon: const Icon(Icons.add),
-                            label: const Text('Agregar'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            if (_itemController.text.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Ingrese el nombre del producto',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-                            await DatabaseHelper.instance.insertProducto({
-                              'nombre': _itemController.text,
-                            });
-                            await _loadProductos();
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Producto guardado'),
-                                ),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.save, size: 18),
-                          label: const Text('Guardar producto'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (_items.isEmpty)
-                      const Center(child: Text('No hay items agregados'))
-                    else
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _items.length,
-                        itemBuilder: (context, index) => ListTile(
-                          dense: true,
-                          title: Text(_items[index]['nombre']),
-                          subtitle: Text(
-                            formatCOP(
-                              (_items[index]['precio'] as num?)?.toDouble() ??
-                                  0.0,
-                            ),
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () =>
-                                setState(() => _items.removeAt(index)),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Pago',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _abonoController,
-                      decoration: const InputDecoration(
-                        labelText: 'Abono',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.payment),
-                      ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (_) => setState(() {}),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Total:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          formatCOP(_total),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_abono > 0) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Abono:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                          Text(
-                            '-${formatCOP(_abono)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
+                            icon: const Icon(Icons.save, size: 18),
+                            label: const Text('Guardar producto'),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Saldo:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            formatCOP(_saldo),
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: _saldo > 0 ? Colors.red : Colors.green,
+                      const SizedBox(height: 12),
+                      if (_items.isEmpty)
+                        const Center(child: Text('No hay items agregados'))
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _items.length,
+                          itemBuilder: (context, index) => ListTile(
+                            dense: true,
+                            title: Text(_items[index]['nombre']),
+                            subtitle: Text(
+                              formatCOP(
+                                (_items[index]['precio'] as num?)?.toDouble() ??
+                                    0.0,
+                              ),
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () =>
+                                  setState(() => _items.removeAt(index)),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _mostrarVistaPrevia,
-              icon: const Icon(Icons.preview),
-              label: const Text('Vista Previa'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(16),
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Pago',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _abonoController,
+                        decoration: const InputDecoration(
+                          labelText: 'Abono',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.payment),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total:',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            formatCOP(_total),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_abono > 0) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Abono:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                            Text(
+                              '-${formatCOP(_abono)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Saldo:',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              formatCOP(_saldo),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: _saldo > 0 ? Colors.red : Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _mostrarVistaPrevia,
+                icon: const Icon(Icons.preview),
+                label: const Text('Vista Previa'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );

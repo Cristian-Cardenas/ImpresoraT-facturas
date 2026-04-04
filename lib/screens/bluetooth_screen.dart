@@ -112,102 +112,104 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
       ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            color: Colors.blue.shade700,
-            child: Column(
-              children: [
-                Icon(
-                  _connectedPrinter != null
-                      ? Icons.bluetooth_connected
-                      : Icons.bluetooth_disabled,
-                  size: 48,
-                  color: _connectedPrinter != null
-                      ? Colors.greenAccent
-                      : Colors.white70,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _connectedPrinter?.name ?? 'Sin conectar',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(_status, style: const TextStyle(color: Colors.white70)),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
               width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isScanning ? null : _startScan,
-                icon: _isScanning
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.search),
-                label: Text(
-                  _isScanning ? 'Escaneando...' : 'Buscar impresoras',
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.all(16),
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Dispositivos:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
-          ),
-          Expanded(
-            child: _devices.isEmpty
-                ? const Center(child: Text('No se encontraron dispositivos'))
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _devices.length,
-                    itemBuilder: (context, index) {
-                      final device = _devices[index];
-                      return Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.print),
-                          title: Text(device.name),
-                          subtitle: Text(
-                            (device as BluetoothPrinterDevice).address,
-                          ),
-                          trailing: _connectedPrinter?.name == device.name
-                              ? const Icon(
-                                  Icons.check_circle,
-                                  color: Colors.green,
-                                )
-                              : null,
-                          onTap: () => _connectDevice(device),
-                        ),
-                      );
-                    },
+              padding: const EdgeInsets.all(20),
+              color: Colors.blue.shade700,
+              child: Column(
+                children: [
+                  Icon(
+                    _connectedPrinter != null
+                        ? Icons.bluetooth_connected
+                        : Icons.bluetooth_disabled,
+                    size: 48,
+                    color: _connectedPrinter != null
+                        ? Colors.greenAccent
+                        : Colors.white70,
                   ),
-          ),
-        ],
+                  const SizedBox(height: 8),
+                  Text(
+                    _connectedPrinter?.name ?? 'Sin conectar',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(_status, style: const TextStyle(color: Colors.white70)),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isScanning ? null : _startScan,
+                  icon: _isScanning
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.search),
+                  label: Text(
+                    _isScanning ? 'Escaneando...' : 'Buscar impresoras',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Dispositivos:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+            ),
+            Expanded(
+              child: _devices.isEmpty
+                  ? const Center(child: Text('No se encontraron dispositivos'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _devices.length,
+                      itemBuilder: (context, index) {
+                        final device = _devices[index];
+                        return Card(
+                          child: ListTile(
+                            leading: const Icon(Icons.print),
+                            title: Text(device.name),
+                            subtitle: Text(
+                              (device as BluetoothPrinterDevice).address,
+                            ),
+                            trailing: _connectedPrinter?.name == device.name
+                                ? const Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green,
+                                  )
+                                : null,
+                            onTap: () => _connectDevice(device),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

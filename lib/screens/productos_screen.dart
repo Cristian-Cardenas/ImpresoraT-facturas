@@ -229,93 +229,95 @@ class _ProductosScreenState extends State<ProductosScreen> {
         backgroundColor: Colors.green,
         child: const Icon(Icons.add),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar productos...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Buscar productos...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
                 ),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+                onChanged: _filterProductos,
               ),
-              onChanged: _filterProductos,
             ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredProductos.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.inventory_2,
-                          size: 64,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _searchController.text.isEmpty
-                              ? 'No hay productos registrados'
-                              : 'No se encontraron productos',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey.shade600,
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _filteredProductos.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.inventory_2,
+                            size: 64,
+                            color: Colors.grey.shade400,
                           ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _filteredProductos.length,
-                    itemBuilder: (context, index) {
-                      final producto = _filteredProductos[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.orange.shade100,
-                            child: Icon(
-                              Icons.inventory,
-                              color: Colors.orange.shade700,
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchController.text.isEmpty
+                                ? 'No hay productos registrados'
+                                : 'No se encontraron productos',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade600,
                             ),
                           ),
-                          title: Text(producto['nombre'] ?? ''),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.orange,
-                                ),
-                                onPressed: () =>
-                                    _mostrarEditarProducto(producto),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _filteredProductos.length,
+                      itemBuilder: (context, index) {
+                        final producto = _filteredProductos[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.orange.shade100,
+                              child: Icon(
+                                Icons.inventory,
+                                color: Colors.orange.shade700,
                               ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
+                            ),
+                            title: Text(producto['nombre'] ?? ''),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.orange,
+                                  ),
+                                  onPressed: () =>
+                                      _mostrarEditarProducto(producto),
                                 ),
-                                onPressed: () => _eliminarProducto(producto),
-                              ),
-                            ],
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () => _eliminarProducto(producto),
+                                ),
+                              ],
+                            ),
+                            onTap: () => _mostrarEditarProducto(producto),
                           ),
-                          onTap: () => _mostrarEditarProducto(producto),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
