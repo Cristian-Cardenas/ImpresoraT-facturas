@@ -160,6 +160,114 @@ class _ClientesScreenState extends State<ClientesScreen> {
     );
   }
 
+  void _mostrarAgregarCliente() {
+    final nombreController = TextEditingController();
+    final telefonoController = TextEditingController();
+    final emailController = TextEditingController();
+    final documentoController = TextEditingController();
+    final infoController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 16,
+            right: 16,
+            top: 16,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Agregar Cliente',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nombreController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                buildFormTextField(
+                  controller: documentoController,
+                  labelText: 'Documento',
+                  prefixIcon: Icons.badge,
+                ),
+                const SizedBox(height: 12),
+                buildFormTextField(
+                  controller: telefonoController,
+                  labelText: 'Teléfono',
+                  prefixIcon: Icons.phone,
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 12),
+                buildFormTextField(
+                  controller: emailController,
+                  labelText: 'Email',
+                  prefixIcon: Icons.email,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 12),
+                buildFormTextField(
+                  controller: infoController,
+                  labelText: 'Info Adicional',
+                  prefixIcon: Icons.info_outline,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (nombreController.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Ingrese el nombre del cliente'),
+                        ),
+                      );
+                      return;
+                    }
+                    await DatabaseHelper.instance.insertCliente({
+                      'nombre': nombreController.text,
+                      'telefono': telefonoController.text,
+                      'email': emailController.text,
+                      'documento': documentoController.text,
+                      'info_adicional': infoController.text,
+                    });
+                    await _loadClientes();
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Cliente guardado')),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  child: const Text('Guardar'),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _eliminarCliente(Map<String, dynamic> cliente) {
     showDialog(
       context: context,
@@ -197,6 +305,11 @@ class _ClientesScreenState extends State<ClientesScreen> {
         title: const Text('Clientes'),
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _mostrarAgregarCliente,
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.add),
       ),
       body: SafeArea(
         child: Column(
