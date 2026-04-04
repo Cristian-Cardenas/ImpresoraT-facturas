@@ -159,12 +159,6 @@ class FacturaPreviewWidget extends StatelessWidget {
                   'Info Adicional: ${factura['info_adicional']}',
                   style: const TextStyle(fontSize: 10),
                 ),
-              if (factura['direccion'] != null &&
-                  factura['direccion'].toString().isNotEmpty)
-                Text(
-                  'Direccion: ${factura['direccion']}',
-                  style: const TextStyle(fontSize: 10),
-                ),
               const SizedBox(height: 8),
               const Text(
                 '================================',

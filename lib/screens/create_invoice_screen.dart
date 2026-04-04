@@ -32,7 +32,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   final TextEditingController _documentoController = TextEditingController();
   final TextEditingController _infoAdicionalController =
       TextEditingController();
-  final TextEditingController _direccionController = TextEditingController();
   final TextEditingController _atendidoPorController = TextEditingController();
   final TextEditingController _modeloController = TextEditingController();
   final TextEditingController _serieController = TextEditingController();
@@ -62,7 +61,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     _emailController.dispose();
     _documentoController.dispose();
     _infoAdicionalController.dispose();
-    _direccionController.dispose();
     _atendidoPorController.dispose();
     _modeloController.dispose();
     _serieController.dispose();
@@ -120,7 +118,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         telefono: _telefonoController.text,
         email: _emailController.text,
         infoAdicional: _infoAdicionalController.text,
-        direccion: _direccionController.text,
         atendidoPor: _atendidoPorController.text,
         modelo: _modeloController.text,
         serie: _serieController.text,
@@ -140,7 +137,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         'email': _emailController.text,
         'documento': _documentoController.text,
         'info_adicional': _infoAdicionalController.text,
-        'direccion': _direccionController.text,
         'items': List.from(_items),
         'total': _total,
         'abono': _abono,
@@ -195,7 +191,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       'email': _emailController.text,
       'documento': _documentoController.text,
       'info_adicional': _infoAdicionalController.text,
-      'direccion': _direccionController.text,
       'atendido_por': _atendidoPorController.text,
       'modelo': _modeloController.text,
       'serie': _serieController.text,
@@ -366,7 +361,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       _emailController.text = cliente['email'] ?? '';
       _documentoController.text = cliente['documento'] ?? '';
       _infoAdicionalController.text = cliente['info_adicional'] ?? '';
-      _direccionController.text = cliente['direccion'] ?? '';
     });
   }
 
@@ -534,12 +528,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                         labelText: 'Email',
                         prefixIcon: Icons.email,
                         keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 12),
-                      buildFormTextField(
-                        controller: _direccionController,
-                        labelText: 'Dirección',
-                        prefixIcon: Icons.location_on,
                       ),
                       const SizedBox(height: 12),
                       buildFormTextField(

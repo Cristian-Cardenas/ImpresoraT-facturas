@@ -75,12 +75,6 @@ class TicketPrinterService {
           align: PrintAlign.left,
         );
       }
-      if (factura['direccion'] != null && factura['direccion'].isNotEmpty) {
-        ticket.text(
-          'Direccion: ${factura['direccion']}',
-          align: PrintAlign.left,
-        );
-      }
 
       _addSeparator(ticket);
       _addSectionHeader(ticket, 'OTROS DATOS');
@@ -172,7 +166,6 @@ class TicketPrinterService {
     required String telefono,
     required String email,
     required String infoAdicional,
-    required String direccion,
     required String atendidoPor,
     required String modelo,
     required String serie,
@@ -225,9 +218,6 @@ class TicketPrinterService {
       }
       if (infoAdicional.isNotEmpty) {
         ticket.text('Info Adicional: $infoAdicional', align: PrintAlign.left);
-      }
-      if (direccion.isNotEmpty) {
-        ticket.text('Direccion: $direccion', align: PrintAlign.left);
       }
 
       _addSeparator(ticket);
