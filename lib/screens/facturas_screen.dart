@@ -28,6 +28,8 @@ class FacturasScreen extends StatefulWidget {
 class _FacturasScreenState extends State<FacturasScreen> {
   late final TicketPrinterService _printerService;
   Key _listKey = UniqueKey();
+  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _filteredFacturas = [];
 
   @override
   void initState() {
@@ -35,6 +37,33 @@ class _FacturasScreenState extends State<FacturasScreen> {
     _printerService = TicketPrinterService(
       printerManager: widget.printerManager,
     );
+    _filteredFacturas = widget.facturas;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterFacturas(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredFacturas = widget.facturas;
+      } else {
+        _filteredFacturas = widget.facturas.where((f) {
+          final cliente = (f['cliente'] ?? '').toLowerCase();
+          final numero = (f['numero_consecutivo'] ?? '').toString();
+          final codigo = (f['codigo_unico'] ?? '').toLowerCase();
+          final estado = (f['estado'] ?? '').toLowerCase();
+          final search = query.toLowerCase();
+          return cliente.contains(search) ||
+              numero.contains(search) ||
+              codigo.contains(search) ||
+              estado.contains(search);
+        }).toList();
+      }
+    });
   }
 
   void _refreshFacturas() async {
@@ -42,6 +71,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
     widget.facturas.clear();
     widget.facturas.addAll(facturas);
     setState(() {
+      _filteredFacturas = List.from(widget.facturas);
       _listKey = UniqueKey();
     });
   }
@@ -106,7 +136,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
 
   void _editarFactura(int index, Map<String, dynamic> factura) {
     final items = List<Map<String, dynamic>>.from(factura['items']);
-    String estado = factura['estado'] ?? 'Abierto';
+    String estado = factura['estado'] ?? 'Debe';
 
     showModalBottomSheet(
       context: context,
@@ -269,15 +299,40 @@ class _FacturasScreenState extends State<FacturasScreen> {
                 const SizedBox(height: 8),
                 SegmentedButton<String>(
                   segments: const [
-                    ButtonSegment(value: 'Abierto', label: Text('Abierto')),
-                    ButtonSegment(value: 'Cerrado', label: Text('Cerrado')),
-                    ButtonSegment(value: 'Adeudo', label: Text('Adeudo')),
-                    ButtonSegment(value: 'Pagado', label: Text('Pagado')),
+                    ButtonSegment(
+                      value: 'Debe',
+                      label: Text('Debe'),
+                      icon: Icon(Icons.warning_amber_rounded),
+                    ),
+                    ButtonSegment(
+                      value: 'Pagado',
+                      label: Text('Pagado'),
+                      icon: Icon(Icons.check_circle_outline),
+                    ),
                   ],
                   selected: {estado},
                   onSelectionChanged: (newSelection) {
                     setModalState(() => estado = newSelection.first);
                   },
+                  selectedIcon: const Icon(Icons.check),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>((
+                      states,
+                    ) {
+                      if (states.contains(WidgetState.selected)) {
+                        return estado == 'Debe' ? Colors.red : Colors.green;
+                      }
+                      return Colors.grey.shade200;
+                    }),
+                    foregroundColor: WidgetStateProperty.resolveWith<Color>((
+                      states,
+                    ) {
+                      if (states.contains(WidgetState.selected)) {
+                        return Colors.white;
+                      }
+                      return Colors.grey.shade700;
+                    }),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
@@ -307,49 +362,82 @@ class _FacturasScreenState extends State<FacturasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final displayedFacturas = widget.facturas;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Facturas'),
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
       ),
-      body: displayedFacturas.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.receipt_long,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No hay facturas creadas',
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Crea una factura en "Crear Factura"',
-                    style: TextStyle(color: Colors.grey.shade500),
-                  ),
-                ],
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar facturas...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade100,
               ),
-            )
-          : ListView.builder(
-              key: _listKey,
-              padding: const EdgeInsets.all(16),
-              itemCount: displayedFacturas.length,
-              itemBuilder: (context, index) {
-                final factura = displayedFacturas[index];
-                return FacturaListTile(
-                  factura: factura,
-                  onEditar: () => _editarFactura(index, factura),
-                  onImprimir: () => _mostrarVistaPrevia(factura),
-                );
-              },
+              onChanged: _filterFacturas,
             ),
+          ),
+          Expanded(
+            child: _filteredFacturas.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.receipt_long,
+                          size: 64,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _searchController.text.isEmpty
+                              ? 'No hay facturas creadas'
+                              : 'No se encontraron facturas',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (_searchController.text.isEmpty)
+                          Text(
+                            'Crea una factura en "Crear Factura"',
+                            style: TextStyle(color: Colors.grey.shade500),
+                          ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    key: _listKey,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _filteredFacturas.length,
+                    itemBuilder: (context, index) {
+                      final factura = _filteredFacturas[index];
+                      final originalIndex = widget.facturas.indexWhere(
+                        (f) => f['id'] == factura['id'],
+                      );
+                      return FacturaListTile(
+                        factura: factura,
+                        onEditar: () => _editarFactura(
+                          originalIndex >= 0 ? originalIndex : index,
+                          factura,
+                        ),
+                        onImprimir: () => _mostrarVistaPrevia(factura),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

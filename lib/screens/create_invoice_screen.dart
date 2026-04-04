@@ -146,7 +146,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         'abono': _abono,
         'saldo': _saldo,
         'fecha': DateTime.now(),
-        'estado': _saldo > 0 ? 'Adeudo' : 'Pagado',
+        'estado': _saldo > 0 ? 'Debe' : 'Pagado',
         'atendido_por': _atendidoPorController.text,
         'modelo': _modeloController.text,
         'serie': _serieController.text,

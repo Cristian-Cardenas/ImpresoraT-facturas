@@ -15,8 +15,8 @@ class FacturaListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final estado = factura['estado'] ?? 'Abierto';
-    final estadoColor = estado == 'Abierto' ? Colors.orange : Colors.green;
+    final estado = factura['estado'] ?? 'Debe';
+    final estadoColor = estado == 'Debe' ? Colors.red : Colors.green;
 
     return Card(
       child: ListTile(
