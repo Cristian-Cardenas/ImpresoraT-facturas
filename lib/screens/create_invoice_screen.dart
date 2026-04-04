@@ -621,41 +621,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          SizedBox(
-                            width: 120,
-                            child: TextField(
-                              controller: _precioController,
-                              decoration: const InputDecoration(
-                                labelText: 'Precio',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.attach_money),
-                              ),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                if (_itemController.text.isNotEmpty &&
-                                    _precioController.text.isNotEmpty) {
-                                  _agregarItem(
-                                    _itemController.text,
-                                    double.tryParse(_precioController.text) ??
-                                        0,
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.add),
-                              label: const Text('Agregar'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          OutlinedButton.icon(
+                          IconButton(
                             onPressed: () async {
                               if (_itemController.text.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -679,8 +645,38 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                                 );
                               }
                             },
-                            icon: const Icon(Icons.save, size: 18),
-                            label: const Text('Guardar producto'),
+                            icon: const Icon(Icons.save, color: Colors.green),
+                            tooltip: 'Guardar producto',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _precioController,
+                              decoration: const InputDecoration(
+                                labelText: 'Precio',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.attach_money),
+                              ),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              if (_itemController.text.isNotEmpty &&
+                                  _precioController.text.isNotEmpty) {
+                                _agregarItem(
+                                  _itemController.text,
+                                  double.tryParse(_precioController.text) ?? 0,
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.add),
+                            label: const Text('Agregar'),
                           ),
                         ],
                       ),
