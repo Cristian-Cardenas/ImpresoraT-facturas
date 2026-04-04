@@ -116,7 +116,7 @@ class _ProductosScreenState extends State<ProductosScreen> {
           ),
         ),
       ),
-    ).then((_) => nombreController.dispose());
+    );
   }
 
   void _mostrarEditarProducto(Map<String, dynamic> producto) {
@@ -187,7 +187,7 @@ class _ProductosScreenState extends State<ProductosScreen> {
           ),
         ),
       ),
-    ).then((_) => nombreController.dispose());
+    );
   }
 
   void _eliminarProducto(Map<String, dynamic> producto) {

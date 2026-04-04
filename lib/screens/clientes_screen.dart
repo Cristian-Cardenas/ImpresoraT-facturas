@@ -157,13 +157,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
           ),
         ),
       ),
-    ).then((_) {
-      nombreController.dispose();
-      telefonoController.dispose();
-      emailController.dispose();
-      documentoController.dispose();
-      infoController.dispose();
-    });
+    );
   }
 
   void _eliminarCliente(Map<String, dynamic> cliente) {

@@ -405,7 +405,7 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           initialValue:
-                              '${_fechaActual.day}/${_fechaActual.month}/${_fechaActual.year}',
+                              '${_fechaActual.day}/${_fechaActual.month}/${_fechaActual.year} ${_fechaActual.hour.toString().padLeft(2, '0')}:${_fechaActual.minute.toString().padLeft(2, '0')}',
                           decoration: const InputDecoration(
                             labelText: 'Fecha de Emisión',
                             border: OutlineInputBorder(),

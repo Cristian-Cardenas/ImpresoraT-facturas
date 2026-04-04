@@ -350,7 +350,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
           ),
         ),
       ),
-    ).then((_) => searchController.dispose());
+    );
   }
 
   void _seleccionarCliente(Map<String, dynamic> cliente) {

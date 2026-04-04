@@ -18,7 +18,7 @@ class FacturaPreviewWidget extends StatelessWidget {
   String _formatFecha(dynamic fecha) {
     if (fecha == null) return '';
     if (fecha is DateTime) {
-      return '${fecha.day}/${fecha.month}/${fecha.year}';
+      return '${fecha.day}/${fecha.month}/${fecha.year} ${fecha.hour.toString().padLeft(2, '0')}:${fecha.minute.toString().padLeft(2, '0')}';
     }
     if (fecha is String) {
       return fecha;

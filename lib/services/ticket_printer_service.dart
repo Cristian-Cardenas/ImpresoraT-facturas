@@ -41,7 +41,8 @@ class TicketPrinterService {
       if (factura['fecha'] != null) {
         final fecha = factura['fecha'];
         if (fecha is DateTime) {
-          fechaStr = '${fecha.day}/${fecha.month}/${fecha.year}';
+          fechaStr =
+              '${fecha.day}/${fecha.month}/${fecha.year} ${fecha.hour.toString().padLeft(2, '0')}:${fecha.minute.toString().padLeft(2, '0')}';
         } else if (fecha is String) {
           fechaStr = fecha;
         }
@@ -197,7 +198,7 @@ class TicketPrinterService {
       ticket.text('FAC-$numeroConsecutivo', align: PrintAlign.center);
       final now = DateTime.now();
       ticket.text(
-        'Fecha: ${now.day}/${now.month}/${now.year}',
+        'Fecha: ${now.day}/${now.month}/${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
         align: PrintAlign.center,
       );
 
