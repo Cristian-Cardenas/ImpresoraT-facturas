@@ -689,6 +689,25 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   }
 }
 
+Widget buildFormTextField({
+  required TextEditingController controller,
+  required String labelText,
+  required IconData prefixIcon,
+  TextInputType keyboardType = TextInputType.text,
+  int maxLines = 1,
+}) {
+  return TextField(
+    controller: controller,
+    decoration: InputDecoration(
+      labelText: labelText,
+      border: const OutlineInputBorder(),
+      prefixIcon: Icon(prefixIcon),
+    ),
+    keyboardType: keyboardType,
+    maxLines: maxLines,
+  );
+}
+
 class FacturaPreviewWidget extends StatelessWidget {
   final Map<String, dynamic> factura;
   final Map<String, dynamic>? negocio;
@@ -1046,6 +1065,65 @@ class CreateInvoiceScreen extends StatefulWidget {
   });
   @override
   State<CreateInvoiceScreen> createState() => _CreateInvoiceScreenState();
+}
+
+class FacturaListTile extends StatelessWidget {
+  final Map<String, dynamic> factura;
+  final VoidCallback onEditar;
+  final VoidCallback onImprimir;
+
+  const FacturaListTile({
+    super.key,
+    required this.factura,
+    required this.onEditar,
+    required this.onImprimir,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final estado = factura['estado'] ?? 'Abierto';
+    final estadoColor = estado == 'Abierto' ? Colors.orange : Colors.green;
+
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.receipt, color: Colors.blue),
+        title: Text('Factura #${factura['numero_consecutivo']}'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${factura['cliente']} - ${formatCOP((factura['total'] as num?)?.toDouble() ?? 0.0)}',
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: estadoColor.withAlpha(51),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                estado,
+                style: TextStyle(fontSize: 12, color: estadoColor.shade800),
+              ),
+            ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.orange),
+              onPressed: onEditar,
+            ),
+            IconButton(
+              icon: const Icon(Icons.print, color: Colors.green),
+              onPressed: onImprimir,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
@@ -1697,13 +1775,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: TextField(
+                          child: buildFormTextField(
                             controller: _clienteController,
-                            decoration: const InputDecoration(
-                              labelText: 'Nombre',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.person),
-                            ),
+                            labelText: 'Nombre',
+                            prefixIcon: Icons.person,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -1718,13 +1793,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: TextField(
+                          child: buildFormTextField(
                             controller: _documentoController,
-                            decoration: const InputDecoration(
-                              labelText: 'Documento',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.badge),
-                            ),
+                            labelText: 'Documento',
+                            prefixIcon: Icons.badge,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1742,23 +1814,17 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    TextField(
+                    buildFormTextField(
                       controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.email),
-                      ),
+                      labelText: 'Email',
+                      prefixIcon: Icons.email,
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 12),
-                    TextField(
+                    buildFormTextField(
                       controller: _infoAdicionalController,
-                      decoration: const InputDecoration(
-                        labelText: 'Info Adicional',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.info_outline),
-                      ),
+                      labelText: 'Info Adicional',
+                      prefixIcon: Icons.info_outline,
                       maxLines: 2,
                     ),
                   ],
@@ -1780,40 +1846,28 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    TextField(
+                    buildFormTextField(
                       controller: _atendidoPorController,
-                      decoration: const InputDecoration(
-                        labelText: 'Atendido por',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
+                      labelText: 'Atendido por',
+                      prefixIcon: Icons.person_outline,
                     ),
                     const SizedBox(height: 12),
-                    TextField(
+                    buildFormTextField(
                       controller: _modeloController,
-                      decoration: const InputDecoration(
-                        labelText: 'Modelo',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.devices),
-                      ),
+                      labelText: 'Modelo',
+                      prefixIcon: Icons.devices,
                     ),
                     const SizedBox(height: 12),
-                    TextField(
+                    buildFormTextField(
                       controller: _serieController,
-                      decoration: const InputDecoration(
-                        labelText: 'Serie',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.tag),
-                      ),
+                      labelText: 'Serie',
+                      prefixIcon: Icons.tag,
                     ),
                     const SizedBox(height: 12),
-                    TextField(
+                    buildFormTextField(
                       controller: _estadoActualController,
-                      decoration: const InputDecoration(
-                        labelText: 'Estado Actual',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.check_circle_outline),
-                      ),
+                      labelText: 'Estado Actual',
+                      prefixIcon: Icons.check_circle_outline,
                     ),
                   ],
                 ),
@@ -2184,42 +2238,30 @@ class _ClientesScreenState extends State<ClientesScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              TextField(
+              buildFormTextField(
                 controller: documentoController,
-                decoration: const InputDecoration(
-                  labelText: 'Documento',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.badge),
-                ),
+                labelText: 'Documento',
+                prefixIcon: Icons.badge,
               ),
               const SizedBox(height: 12),
-              TextField(
+              buildFormTextField(
                 controller: telefonoController,
-                decoration: const InputDecoration(
-                  labelText: 'Teléfono',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.phone),
-                ),
+                labelText: 'Teléfono',
+                prefixIcon: Icons.phone,
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 12),
-              TextField(
+              buildFormTextField(
                 controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
-                ),
+                labelText: 'Email',
+                prefixIcon: Icons.email,
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 12),
-              TextField(
+              buildFormTextField(
                 controller: infoController,
-                decoration: const InputDecoration(
-                  labelText: 'Info Adicional',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.info_outline),
-                ),
+                labelText: 'Info Adicional',
+                prefixIcon: Icons.info_outline,
                 maxLines: 2,
               ),
               const SizedBox(height: 16),
@@ -2778,55 +2820,10 @@ class _FacturasScreenState extends State<FacturasScreen> {
               itemCount: displayedFacturas.length,
               itemBuilder: (context, index) {
                 final factura = displayedFacturas[index];
-                final estado = factura['estado'] ?? 'Abierto';
-                return Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.receipt, color: Colors.blue),
-                    title: Text('Factura #${factura['numero_consecutivo']}'),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${factura['cliente']} - ${formatCOP(factura['total'] as double)}',
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: estado == 'Abierto'
-                                ? Colors.orange.shade100
-                                : Colors.green.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            estado,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: estado == 'Abierto'
-                                  ? Colors.orange.shade800
-                                  : Colors.green.shade800,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.orange),
-                          onPressed: () => _editarFactura(index, factura),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.print, color: Colors.green),
-                          onPressed: () => _mostrarVistaPrevia(factura),
-                        ),
-                      ],
-                    ),
-                  ),
+                return FacturaListTile(
+                  factura: factura,
+                  onEditar: () => _editarFactura(index, factura),
+                  onImprimir: () => _mostrarVistaPrevia(factura),
                 );
               },
             ),
@@ -3169,78 +3166,54 @@ class _FacturasScreenState extends State<FacturasScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                buildFormTextField(
                   controller: telefonoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Teléfono',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.phone),
-                  ),
+                  labelText: 'Teléfono',
+                  prefixIcon: Icons.phone,
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                buildFormTextField(
                   controller: emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
-                  ),
+                  labelText: 'Email',
+                  prefixIcon: Icons.email,
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                buildFormTextField(
                   controller: documentoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Documento',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.badge),
-                  ),
+                  labelText: 'Documento',
+                  prefixIcon: Icons.badge,
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                buildFormTextField(
                   controller: infoAdicionalController,
-                  decoration: const InputDecoration(
-                    labelText: 'Info Adicional',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.info),
-                  ),
+                  labelText: 'Info Adicional',
+                  prefixIcon: Icons.info,
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                buildFormTextField(
                   controller: atendidoPorController,
-                  decoration: const InputDecoration(
-                    labelText: 'Atendido Por',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
+                  labelText: 'Atendido Por',
+                  prefixIcon: Icons.person_outline,
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                buildFormTextField(
                   controller: modeloController,
-                  decoration: const InputDecoration(
-                    labelText: 'Modelo',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.devices),
-                  ),
+                  labelText: 'Modelo',
+                  prefixIcon: Icons.devices,
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                buildFormTextField(
                   controller: serieController,
-                  decoration: const InputDecoration(
-                    labelText: 'Serie',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.qr_code),
-                  ),
+                  labelText: 'Serie',
+                  prefixIcon: Icons.qr_code,
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                buildFormTextField(
                   controller: estadoActualController,
-                  decoration: const InputDecoration(
-                    labelText: 'Estado Actual',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.build),
-                  ),
+                  labelText: 'Estado Actual',
+                  prefixIcon: Icons.build,
                 ),
                 const SizedBox(height: 16),
                 const Text(
