@@ -3110,29 +3110,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
   }
 
   void _editarFactura(int index, Map<String, dynamic> factura) {
-    final clienteController = TextEditingController(text: factura['cliente']);
-    final telefonoController = TextEditingController(
-      text: factura['telefono'] ?? '',
-    );
-    final emailController = TextEditingController(text: factura['email'] ?? '');
-    final documentoController = TextEditingController(
-      text: factura['documento'] ?? '',
-    );
-    final infoAdicionalController = TextEditingController(
-      text: factura['info_adicional'] ?? '',
-    );
-    final atendidoPorController = TextEditingController(
-      text: factura['atendido_por'] ?? '',
-    );
-    final modeloController = TextEditingController(
-      text: factura['modelo'] ?? '',
-    );
-    final serieController = TextEditingController(text: factura['serie'] ?? '');
-    final estadoActualController = TextEditingController(
-      text: factura['estado_actual'] ?? '',
-    );
     final items = List<Map<String, dynamic>>.from(factura['items']);
-    double total = factura['total'];
     String estado = factura['estado'] ?? 'Abierto';
 
     showModalBottomSheet(
@@ -3157,83 +3135,56 @@ class _FacturasScreenState extends State<FacturasScreen> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: clienteController,
-                  decoration: const InputDecoration(
-                    labelText: 'Cliente',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                ),
-                const SizedBox(height: 12),
-                buildFormTextField(
-                  controller: telefonoController,
-                  labelText: 'Teléfono',
-                  prefixIcon: Icons.phone,
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 12),
-                buildFormTextField(
-                  controller: emailController,
-                  labelText: 'Email',
-                  prefixIcon: Icons.email,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 12),
-                buildFormTextField(
-                  controller: documentoController,
-                  labelText: 'Documento',
-                  prefixIcon: Icons.badge,
-                ),
-                const SizedBox(height: 12),
-                buildFormTextField(
-                  controller: infoAdicionalController,
-                  labelText: 'Info Adicional',
-                  prefixIcon: Icons.info,
-                ),
-                const SizedBox(height: 12),
-                buildFormTextField(
-                  controller: atendidoPorController,
-                  labelText: 'Atendido Por',
-                  prefixIcon: Icons.person_outline,
-                ),
-                const SizedBox(height: 12),
-                buildFormTextField(
-                  controller: modeloController,
-                  labelText: 'Modelo',
-                  prefixIcon: Icons.devices,
-                ),
-                const SizedBox(height: 12),
-                buildFormTextField(
-                  controller: serieController,
-                  labelText: 'Serie',
-                  prefixIcon: Icons.qr_code,
-                ),
-                const SizedBox(height: 12),
-                buildFormTextField(
-                  controller: estadoActualController,
-                  labelText: 'Estado Actual',
-                  prefixIcon: Icons.build,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.person, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              factura['cliente'] ?? 'Sin cliente',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.receipt, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Factura #${factura['numero_consecutivo']}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Text(
                   'Items:',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                ...items.asMap().entries.map(
-                  (e) => ListTile(
+                ...items.map(
+                  (item) => ListTile(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
-                    title: Text(e.value['nombre']),
-                    subtitle: Text(formatCOP(e.value['precio'] as double)),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () {
-                        setModalState(() {
-                          total -= e.value['precio'];
-                          items.removeAt(e.key);
-                        });
-                      },
+                    title: Text(item['nombre'] ?? ''),
+                    subtitle: Text(
+                      formatCOP((item['precio'] as num?)?.toDouble() ?? 0.0),
                     ),
                   ),
                 ),
@@ -3249,13 +3200,71 @@ class _FacturasScreenState extends State<FacturasScreen> {
                       ),
                     ),
                     Text(
-                      formatCOP(total),
+                      formatCOP((factura['total'] as num?)?.toDouble() ?? 0.0),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
+                ),
+                Builder(
+                  builder: (context) {
+                    final abono = (factura['abono'] as num?)?.toDouble() ?? 0.0;
+                    if (abono > 0) {
+                      final saldo =
+                          ((factura['total'] as num?)?.toDouble() ?? 0.0) -
+                          abono;
+                      return Column(
+                        children: [
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Abono:',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                '-${formatCOP(abono)}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Saldo:',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                formatCOP(saldo),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: saldo > 0 ? Colors.red : Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -3278,21 +3287,7 @@ class _FacturasScreenState extends State<FacturasScreen> {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {
-                    final updatedFactura = {
-                      ...factura,
-                      'cliente': clienteController.text,
-                      'telefono': telefonoController.text,
-                      'email': emailController.text,
-                      'documento': documentoController.text,
-                      'info_adicional': infoAdicionalController.text,
-                      'atendido_por': atendidoPorController.text,
-                      'modelo': modeloController.text,
-                      'serie': serieController.text,
-                      'estado_actual': estadoActualController.text,
-                      'items': items,
-                      'total': total,
-                      'estado': estado,
-                    };
+                    final updatedFactura = {...factura, 'estado': estado};
                     widget.onFacturaActualizada?.call(index, updatedFactura);
                     Navigator.pop(context);
                     _refreshFacturas();
