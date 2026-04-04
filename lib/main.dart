@@ -2887,12 +2887,6 @@ class _FacturasScreenState extends State<FacturasScreen> {
           align: PrintAlign.left,
         );
       }
-      if (factura['direccion'] != null && factura['direccion'].isNotEmpty) {
-        ticket.text(
-          'Direccion: ${factura['direccion']}',
-          align: PrintAlign.left,
-        );
-      }
 
       ticket.text('================================', align: PrintAlign.center);
       ticket.text(
@@ -3175,12 +3169,6 @@ class _FacturasScreenState extends State<FacturasScreen> {
                           'Info Adicional: ${factura['info_adicional']}',
                           style: const TextStyle(fontSize: 10),
                         ),
-                      if (factura['direccion'] != null &&
-                          factura['direccion'].toString().isNotEmpty)
-                        Text(
-                          'Direccion: ${factura['direccion']}',
-                          style: const TextStyle(fontSize: 10),
-                        ),
                       const SizedBox(height: 8),
                       const Text(
                         '================================',
@@ -3428,9 +3416,6 @@ class _FacturasScreenState extends State<FacturasScreen> {
     final telefonoController = TextEditingController(
       text: factura['telefono'] ?? '',
     );
-    final direccionController = TextEditingController(
-      text: factura['direccion'] ?? '',
-    );
     final emailController = TextEditingController(text: factura['email'] ?? '');
     final documentoController = TextEditingController(
       text: factura['documento'] ?? '',
@@ -3491,15 +3476,6 @@ class _FacturasScreenState extends State<FacturasScreen> {
                     prefixIcon: Icon(Icons.phone),
                   ),
                   keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: direccionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Dirección',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.location_on),
-                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -3632,7 +3608,6 @@ class _FacturasScreenState extends State<FacturasScreen> {
                       ...factura,
                       'cliente': clienteController.text,
                       'telefono': telefonoController.text,
-                      'direccion': direccionController.text,
                       'email': emailController.text,
                       'documento': documentoController.text,
                       'info_adicional': infoAdicionalController.text,

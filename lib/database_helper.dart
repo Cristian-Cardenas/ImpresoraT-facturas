@@ -22,7 +22,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -74,6 +74,44 @@ class DatabaseHelper {
         )
       ''');
     }
+    if (oldVersion < 8) {
+      if (await _columnExists(db, 'facturas', 'direccion')) {
+        try {
+          await db.execute('ALTER TABLE facturas DROP COLUMN direccion');
+        } catch (e) {
+          await db.execute('''
+            CREATE TABLE facturas_new (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              numero_consecutivo INTEGER NOT NULL,
+              codigo_unico TEXT NOT NULL,
+              cliente_id INTEGER,
+              cliente TEXT NOT NULL,
+              telefono TEXT,
+              email TEXT,
+              documento TEXT,
+              info_adicional TEXT,
+              items TEXT NOT NULL,
+              total REAL NOT NULL,
+              abono REAL DEFAULT 0,
+              saldo REAL DEFAULT 0,
+              fecha TEXT NOT NULL,
+              estado TEXT NOT NULL DEFAULT 'Abierto',
+              atendido_por TEXT,
+              modelo TEXT,
+              serie TEXT,
+              estado_actual TEXT,
+              FOREIGN KEY (cliente_id) REFERENCES clientes (id)
+            )
+          ''');
+          await db.execute('''
+            INSERT INTO facturas_new (id, numero_consecutivo, codigo_unico, cliente_id, cliente, telefono, email, documento, info_adicional, items, total, abono, saldo, fecha, estado, atendido_por, modelo, serie, estado_actual)
+            SELECT id, numero_consecutivo, codigo_unico, cliente_id, cliente, telefono, email, documento, info_adicional, items, total, abono, saldo, fecha, estado, atendido_por, modelo, serie, estado_actual FROM facturas
+          ''');
+          await db.execute('DROP TABLE facturas');
+          await db.execute('ALTER TABLE facturas_new RENAME TO facturas');
+        }
+      }
+    }
   }
 
   Future<bool> _columnExists(Database db, String table, String column) async {
@@ -115,7 +153,6 @@ class DatabaseHelper {
         email TEXT,
         documento TEXT,
         info_adicional TEXT,
-        direccion TEXT,
         items TEXT NOT NULL,
         total REAL NOT NULL,
         abono REAL DEFAULT 0,
@@ -188,9 +225,10 @@ class DatabaseHelper {
       'email': factura['email'] ?? '',
       'documento': factura['documento'] ?? '',
       'info_adicional': factura['info_adicional'] ?? '',
-      'direccion': factura['direccion'] ?? '',
       'items': jsonEncode(factura['items']),
       'total': factura['total'],
+      'abono': factura['abono'] ?? 0,
+      'saldo': factura['saldo'] ?? 0,
       'fecha': factura['fecha'].toString(),
       'estado': factura['estado'] ?? 'Abierto',
       'atendido_por': factura['atendido_por'] ?? '',
@@ -217,7 +255,6 @@ class DatabaseHelper {
         'email': row['email'],
         'documento': row['documento'],
         'info_adicional': row['info_adicional'],
-        'direccion': row['direccion'],
         'items': jsonDecode(row['items'] as String),
         'total': row['total'],
         'abono': row['abono'] ?? 0,
@@ -240,7 +277,6 @@ class DatabaseHelper {
       'email': factura['email'] ?? '',
       'documento': factura['documento'] ?? '',
       'info_adicional': factura['info_adicional'] ?? '',
-      'direccion': factura['direccion'] ?? '',
       'items': jsonEncode(factura['items']),
       'total': factura['total'],
       'abono': factura['abono'] ?? 0,
